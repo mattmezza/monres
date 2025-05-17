@@ -1,0 +1,45 @@
+[Unit]
+Description=Lightweight VPS Resource Monitor (ResMon)
+Documentation=https://github.com/yourusername/resmon/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=resmon # Create this user: useradd --system --shell /sbin/nologin --home-dir /var/lib/resmon resmon
+Group=resmon # Create this group: groupadd --system resmon
+# Ensure /var/lib/resmon is writable by resmon user for state_file
+# Ensure /etc/resmon is readable by resmon user for config file
+
+# Path to the compiled binary
+ExecStart=/usr/local/bin/resmon -config /etc/resmon/config.yaml
+
+# Restart policy
+Restart=on-failure
+RestartSec=5s
+
+# Environment variables for sensitive data
+# It's better to use EnvironmentFile for multiple secrets
+EnvironmentFile=/etc/resmon/resmon.env # This file should have 0600 permissions, owned by resmonuser
+
+# Standard output and error logging
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+# NoNewPrivileges=true # If your Go app doesn't need to fork/exec other things with higher privileges
+# PrivateTmp=true
+# ProtectSystem=strict # Mounts /usr, /boot, /etc as read-only for the service
+# ProtectHome=true     # Makes home directories inaccessible
+# ReadWritePaths=/var/lib/resmon # Only if state_file is here
+# ReadOnlyPaths=/etc/resmon # If config is here and not modified by app
+
+CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_NET_ADMIN # Drop unnecessary capabilities
+# Minimal capabilities needed:
+# - Reading /proc, /sys doesn't typically require special capabilities if file permissions allow.
+# - Network for notifications.
+# Set to empty if no special capabilities are needed beyond normal user:
+# CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
