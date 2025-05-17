@@ -93,7 +93,8 @@ func (a *Alerter) CheckAndNotify(now time.Time, currentMetrics collector.Collect
 			// This is crucial for new services or after gaps in collection
 			if len(metricValuePoints) > 0 {
 				firstPointTime := metricValuePoints[0].Timestamp
-				if now.Sub(firstPointTime) < rule.Duration {
+				// Allow a small tolerance (e.g., 100ms) for time variations
+				if now.Sub(firstPointTime) < rule.Duration - 100*time.Millisecond {
 					log.Printf("Alerter: Data points for rule '%s' (metric: %s) span %s, which is less than required duration %s. Skipping.",
 					rule.Name, rule.Metric, now.Sub(firstPointTime).String(), rule.Duration.String())
 					continue // Not enough history accumulated yet

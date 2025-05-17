@@ -10,7 +10,7 @@ alerts:
     metric: "cpu_percent_total"
     condition: ">"
     threshold: 0
-    duration: "4s"
+    duration: "3s"
     aggregation: "average"
     channels: ["critical_email", "ops_telegram", "test_stdout"]
 #
