@@ -7,7 +7,7 @@ import (
 	"time"
 	"log"
 
-	"github.com/mattmezza/resmon/internal/config"
+	"github.com/mattmezza/monres/internal/config"
 )
 
 // NotificationData is the data passed to templates.

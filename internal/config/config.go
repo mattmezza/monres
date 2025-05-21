@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattmezza/resmon/internal/util" // Corrected import path
+	"github.com/mattmezza/monres/internal/util" // Corrected import path
 	"gopkg.in/yaml.v3"
 )
 

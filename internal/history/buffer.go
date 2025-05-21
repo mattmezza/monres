@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattmezza/resmon/internal/config"
+	"github.com/mattmezza/monres/internal/config"
 )
 
 type DataPoint struct {

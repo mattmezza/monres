@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattmezza/resmon/internal/config" // Corrected import path
-	"github.com/mattmezza/resmon/internal/history"
+	"github.com/mattmezza/monres/internal/config" // Corrected import path
+	"github.com/mattmezza/monres/internal/history"
 )
 
 // AlertState represents the current status of an alert.

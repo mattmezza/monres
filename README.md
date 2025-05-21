@@ -1,6 +1,6 @@
-# ResMon - Lightweight VPS Resource Monitor
+# monres - Lightweight VPS Resource Monitor
 
-ResMon is a simple, lightweight, and easy-to-install software tool for monitoring
+monres is a simple, lightweight, and easy-to-install software tool for monitoring
 core system resources (CPU, Memory, Disk I/O, Network I/O) on an Ubuntu VPS.
 It runs as a background service, triggers alerts based on user-defined thresholds,
 and sends notifications via Email and Telegram.
@@ -31,42 +31,42 @@ Version: 1.1
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/mattmezza/resmon.git](https://github.com/mattmezza/resmon.git)
-    cd resmon
+    git clone [https://github.com/mattmezza/monres.git](https://github.com/mattmezza/monres.git)
+    cd monres
     ```
 
 2.  Build the binary:
     ```bash
-    go build -ldflags="-s -w" -o resmon cmd/resmon/main.go
+    go build -ldflags="-s -w" -o monres cmd/monres/main.go
     ```
     The `-s -w` flags strip debug information and symbol table, reducing binary size.
 
 3.  Copy the binary to a suitable location:
     ```bash
-    sudo cp resmon /usr/local/bin/
+    sudo cp monres /usr/local/bin/
     ```
 
 ### Configuration
 
 1.  Create the configuration directory:
     ```bash
-    sudo mkdir -p /etc/resmon
+    sudo mkdir -p /etc/monres
     ```
 
 2.  Copy the example configuration:
     ```bash
-    sudo cp config.example.yaml /etc/resmon/config.yaml
+    sudo cp config.example.yaml /etc/monres/config.yaml
     ```
 
-3.  Edit `/etc/resmon/config.yaml` to suit your needs. Refer to the comments within the file and the "Configuration Details" section below.
+3.  Edit `/etc/monres/config.yaml` to suit your needs. Refer to the comments within the file and the "Configuration Details" section below.
 
 4.  Create the environment file for sensitive credentials:
     ```bash
-    sudo touch /etc/resmon/resmon.env
-    sudo chown resmon:resmon /etc/resmon/resmon.env # Assuming 'resmon' user/group
-    sudo chmod 600 /etc/resmon/resmon.env
+    sudo touch /etc/monres/monres.env
+    sudo chown monres:monres /etc/monres/monres.env # Assuming 'monres' user/group
+    sudo chmod 600 /etc/monres/monres.env
     ```
-    Edit `/etc/resmon/resmon.env` and add your secrets, for example:
+    Edit `/etc/monres/monres.env` and add your secrets, for example:
     ```ini
     RESMON_SMTP_PASSWORD_CRITICAL_EMAIL="your_smtp_password"
     RESMON_TELEGRAM_TOKEN_OPS_TELEGRAM="your_telegram_bot_token"
@@ -76,39 +76,39 @@ Version: 1.1
 
 ### Setup as a Systemd Service
 
-1.  Create a dedicated system user for ResMon:
+1.  Create a dedicated system user for monres:
     ```bash
-    sudo groupadd --system resmon
-    sudo useradd --system --gid resmon --shell /sbin/nologin --home-dir /var/lib/resmon resmon
-    sudo mkdir -p /var/lib/resmon
-    sudo chown -R resmon:resmon /var/lib/resmon
-    # Grant read access to config for the resmon user
-    sudo chown root:resmon /etc/resmon # dir owned by root, group readable by resmon
-    sudo chmod 750 /etc/resmon
-    sudo chown root:resmon /etc/resmon/config.yaml
-    sudo chmod 640 /etc/resmon/config.yaml
-    # Ensure resmon.env is also correctly permissioned and owned as above
-    sudo chown resmon:resmon /etc/resmon/resmon.env
-    sudo chmod 600 /etc/resmon/resmon.env
+    sudo groupadd --system monres
+    sudo useradd --system --gid monres --shell /sbin/nologin --home-dir /var/lib/monres monres
+    sudo mkdir -p /var/lib/monres
+    sudo chown -R monres:monres /var/lib/monres
+    # Grant read access to config for the monres user
+    sudo chown root:monres /etc/monres # dir owned by root, group readable by monres
+    sudo chmod 750 /etc/monres
+    sudo chown root:monres /etc/monres/config.yaml
+    sudo chmod 640 /etc/monres/config.yaml
+    # Ensure monres.env is also correctly permissioned and owned as above
+    sudo chown monres:monres /etc/monres/monres.env
+    sudo chmod 600 /etc/monres/monres.env
 
     ```
 
 2.  Copy the systemd service file:
     ```bash
-    sudo cp deploy/systemd/resmon.service /etc/systemd/system/
+    sudo cp deploy/systemd/monres.service /etc/systemd/system/
     ```
 
 3.  Reload systemd, enable, and start the service:
     ```bash
     sudo systemctl daemon-reload
-    sudo systemctl enable resmon.service
-    sudo systemctl start resmon.service
+    sudo systemctl enable monres.service
+    sudo systemctl start monres.service
     ```
 
 4.  Check the status:
     ```bash
-    sudo systemctl status resmon.service
-    journalctl -u resmon -f
+    sudo systemctl status monres.service
+    journalctl -u monres -f
     ```
 
 ## Configuration Details

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mattmezza/resmon/internal/config"
+	"github.com/mattmezza/monres/internal/config"
 )
 
 type TelegramNotifier struct {

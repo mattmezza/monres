@@ -6,7 +6,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/mattmezza/resmon/internal/config"
+	"github.com/mattmezza/monres/internal/config"
 )
 
 type EmailNotifier struct {

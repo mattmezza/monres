@@ -1,18 +1,18 @@
 [Unit]
-Description=Lightweight VPS Resource Monitor (ResMon)
-Documentation=https://github.com/yourusername/resmon/README.md
+Description=Lightweight VPS Resource Monitor (monres)
+Documentation=https://github.com/yourusername/monres/README.md
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-User=resmon # Create this user: useradd --system --shell /sbin/nologin --home-dir /var/lib/resmon resmon
-Group=resmon # Create this group: groupadd --system resmon
-# Ensure /var/lib/resmon is writable by resmon user for state_file
-# Ensure /etc/resmon is readable by resmon user for config file
+User=monres # Create this user: useradd --system --shell /sbin/nologin --home-dir /var/lib/monres monres
+Group=monres # Create this group: groupadd --system monres
+# Ensure /var/lib/monres is writable by monres user for state_file
+# Ensure /etc/monres is readable by monres user for config file
 
 # Path to the compiled binary
-ExecStart=/usr/local/bin/resmon -config /etc/resmon/config.yaml
+ExecStart=/usr/local/bin/monres -config /etc/monres/config.yaml
 
 # Restart policy
 Restart=on-failure
@@ -20,7 +20,7 @@ RestartSec=5s
 
 # Environment variables for sensitive data
 # It's better to use EnvironmentFile for multiple secrets
-EnvironmentFile=/etc/resmon/resmon.env # This file should have 0600 permissions, owned by resmonuser
+EnvironmentFile=/etc/monres/monres.env # This file should have 0600 permissions, owned by monresuser
 
 # Standard output and error logging
 StandardOutput=journal
@@ -31,8 +31,8 @@ StandardError=journal
 # PrivateTmp=true
 # ProtectSystem=strict # Mounts /usr, /boot, /etc as read-only for the service
 # ProtectHome=true     # Makes home directories inaccessible
-# ReadWritePaths=/var/lib/resmon # Only if state_file is here
-# ReadOnlyPaths=/etc/resmon # If config is here and not modified by app
+# ReadWritePaths=/var/lib/monres # Only if state_file is here
+# ReadOnlyPaths=/etc/monres # If config is here and not modified by app
 
 CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_NET_ADMIN # Drop unnecessary capabilities
 # Minimal capabilities needed:

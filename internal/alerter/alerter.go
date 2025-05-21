@@ -5,11 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattmezza/resmon/internal/collector"
-	"github.com/mattmezza/resmon/internal/config"
-	"github.com/mattmezza/resmon/internal/history"
-	"github.com/mattmezza/resmon/internal/notifier"
-	"github.com/mattmezza/resmon/internal/state"
+	"github.com/mattmezza/monres/internal/collector"
+	"github.com/mattmezza/monres/internal/config"
+	"github.com/mattmezza/monres/internal/history"
+	"github.com/mattmezza/monres/internal/notifier"
+	"github.com/mattmezza/monres/internal/state"
 )
 
 type EventType string

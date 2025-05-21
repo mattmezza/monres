@@ -1,4 +1,4 @@
-module github.com/mattmezza/resmon
+module github.com/mattmezza/monres
 
 go 1.24.3
 
