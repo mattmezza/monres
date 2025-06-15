@@ -118,10 +118,10 @@ func LoadConfig(filePath string) (*Config, error) {
 			return nil, fmt.Errorf("notification channel at index %d missing name", i)
 		}
 		// Load sensitive data from ENV vars
-		// Naming convention: RESMON_<SENSITIVE_FIELD_NAME>_<CHANNEL_NAME_UPPERCASE>
-		// e.g., RESMON_SMTP_PASSWORD_CRITICAL_EMAIL
-		// e.g., RESMON_TELEGRAM_TOKEN_OPS_TELEGRAM
-		envVarPrefix := "RESMON_"
+		// Naming convention: MONRES_<SENSITIVE_FIELD_NAME>_<CHANNEL_NAME_UPPERCASE>
+		// e.g., MONRES_SMTP_PASSWORD_CRITICAL_EMAIL
+		// e.g., MONRES_TELEGRAM_TOKEN_OPS_TELEGRAM
+		envVarPrefix := "MONRES_"
 		channelNameUpper := strings.ToUpper(strings.ReplaceAll(nc.Name, "-", "_"))
 
 		switch nc.Type {
