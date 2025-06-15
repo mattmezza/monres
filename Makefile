@@ -44,10 +44,7 @@ uninstall: clean del-user
 reinstall: uninstall install
 	@echo "Monres reinstalled successfully."
 release:
-	gh release create $(name) \
-		--title "Release $(name)" \
-		--notes "Release notes for version $(name)" \
-		./monres
+	gh release create $(name) --title "$(name)" --generate-notes ./monres
 	@echo "Release created successfully."
 	git push --tags
 	@echo "Changes pushed to remote repository."
