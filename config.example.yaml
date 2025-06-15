@@ -1,86 +1,87 @@
 # General Settings
 interval_seconds: 1
-#state_file: "/var/lib/monres/state.json"
-state_file: "/tmp/state.json" # For testing purposes, use a temporary file.
 hostname: "" # Optional: override OS hostname. If empty, OS hostname is used.
 
 # Alert Rules
 alerts:
+  # CPU above 90% on avg for last minute
   - name: "High CPU Usage"
     metric: "cpu_percent_total"
     condition: ">"
-    threshold: 0
-    duration: "3s"
+    threshold: 90
+    duration: "1m"
     aggregation: "average"
-    channels: ["critical_email", "ops_telegram", "test_stdout"]
+    channels: ["email", "telegram", "stdout"]
 
+  # Free memory below 10% on avg for last minute
   - name: "Low Memory Free Percentage"
     metric: "mem_percent_free"
     condition: "<"
-    threshold: 72
-    duration: "3s"
+    threshold: 10
+    duration: "1m"
     aggregation: "average"
-    channels: ["test_stdout"]
+    channels: ["email", "telegram", "stdout"]
 
-#  - name: "High Swap Usage Percentage"
-#    metric: "swap_percent_used"
-#    condition: ">"
-#    threshold: 50
-#    duration: "1m"
-#    aggregation: "max"
-#    channels: ["ops_telegram"]
-#
-#  - name: "High Disk Write IO"
-#    metric: "disk_write_bytes_ps"
-#    condition: ">"
-#    threshold: 5242880 # 5 MB/s
-#    duration: "2m"
-#    aggregation: "max"
-#    channels: ["ops_telegram"]
-#
-#  - name: "High Network Sent Rate"
-#    metric: "net_sent_bytes_ps"
-#    condition: ">"
-#    threshold: 10485760 # 10 MB/s
-#    duration: "1m"
-#    aggregation: "average"
-#    channels: ["ops_telegram"]
-#
+  # Swap usage above 50% (max) within last minute
+  - name: "High Swap Usage Percentage"
+    metric: "swap_percent_used"
+    condition: ">"
+    threshold: 50
+    duration: "1m"
+    aggregation: "max"
+    channels: ["stdout"]
+
+  # Disk Write I/O above 5 MB/s (max) within last 2 minutes
+  - name: "High Disk Write IO"
+    metric: "disk_write_bytes_ps"
+    condition: ">"
+    threshold: 5242880 # 5 MB/s
+    duration: "2m"
+    aggregation: "max"
+    channels: ["stdout"]
+
+  # Network sent rate above 10 MB/s on avg for last minute
+  - name: "High Network Sent Rate"
+    metric: "net_sent_bytes_ps"
+    condition: ">"
+    threshold: 10485760 # 10 MB/s
+    duration: "1m"
+    aggregation: "average"
+    channels: ["email", "telegram", "stdout"]
+
 # Notification Channels Configuration
 notification_channels:
-  - name: "critical_email"
+  - name: "email"
     type: "email"
     config:
       smtp_host: "smtp.example.com"
       smtp_port: 587
-      smtp_username: "alerts@example.com"
-      # smtp_password: "" # Read from RESMON_SMTP_PASSWORD_CRITICAL_EMAIL
-      smtp_from: "Resmon Alerts <alerts@example.com>"
-      smtp_to: ["admin@example.com", "oncall@example.com"]
+      smtp_username: "smtp@example.com"
+      # smtp_password: "" # Read from MONRES_SMTP_PASSWORD_CRITICAL_EMAIL
+      smtp_from: "Monres Alerts <monres@example.co>"
+      smtp_to: ["me@example.com", "ops@example.com"]
       smtp_use_tls: true # true for STARTTLS, false for no TLS/SSL. For explicit SSL, port is usually 465.
 
-  - name: "ops_telegram"
+  - name: "telegram"
     type: "telegram"
     config:
-      # bot_token: "" # Read from RESMON_TELEGRAM_TOKEN_OPS_TELEGRAM
-      chat_id: "-1001234567890" # Group Chat ID
-  - name: "test_stdout"
+      # bot_token: "" # Read from MONRES_TELEGRAM_TOKEN_OPS_TELEGRAM
+      chat_id: "-4727187247" # Group Chat ID
+
+  - name: "stdout"
     type: "stdout"
 
 # Notification Templates (Optional - built-in defaults will be used if omitted)
 templates:
   alert_fired: |
-    🔥 ALERT FIRED [{{ .State }}] 🔥
-    Host: {{ .Hostname }}
-    Alert: {{ .AlertName }}
-    Metric: {{ .MetricName }} {{ .Condition }} {{ .ThresholdValue }} (current value: {{ printf "%.2f" .MetricValue }})
-    Time: {{ .Time.Format "2006-01-02 15:04:05 MST" }}
-    {{if .DurationString}}Duration: {{.DurationString}}{{end}}
-    {{if .Aggregation}}Aggregation: {{.Aggregation}}{{end}}
+    🔥 {{ .State }} {{ .AlertName }}@{{ .Hostname }} 🔥
+    {{ .Time.Format "2006-01-02 15:04:05 MST" }}
+
+    current {{ .MetricName }} {{ printf "%.2f" .MetricValue }} {{ .Condition }} {{ .ThresholdValue }}
+    {{if .Aggregation}}{{.Aggregation}}{{end}}{{if .DurationString}}({{.DurationString}}){{end}}
 
   alert_resolved: |
-    ✅ ALERT RESOLVED [{{ .State }}] ✅
-    Host: {{ .Hostname }}
-    Alert: {{ .AlertName }}
-    Metric: {{ .MetricName }}
-    Time: {{ .Time.Format "2006-01-02 15:04:05 MST" }}
+    ✅ {{ .State }} {{ .AlertName }}@{{ .Hostname }} ✅
+    {{ .Time.Format "2006-01-02 15:04:05 MST" }}
+
+    {{ .MetricName }} is back on track

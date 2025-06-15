@@ -110,8 +110,6 @@ func main() {
 		select {
 		case <-ticker.C:
 			currentTime := time.Now()
-			log.Println("Collection cycle triggered.")
-
 			collectedData, err := metricCollector.CollectAll()
 			if err != nil {
 				log.Printf("Error during metric collection cycle: %v", err)
@@ -120,7 +118,7 @@ func main() {
 			if len(collectedData) == 0 && err == nil {
 				log.Println("No metrics collected in this cycle.")
 			} else {
-                 log.Printf("Collected %d metrics. Adding to history.", len(collectedData))
+                 log.Printf("%d metrics added to history.", len(collectedData))
             }
 
 

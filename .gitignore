@@ -1,3 +1,5 @@
 monres
 !cmd/monres
 
+config.yaml
+.envrc
