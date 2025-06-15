@@ -6,8 +6,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=monres # Create this user: useradd --system --shell /sbin/nologin --home-dir /var/lib/monres monres
-Group=monres # Create this group: groupadd --system monres
+User=monres
+Group=monres
 # Ensure /var/lib/monres is writable by monres user for state_file
 # Ensure /etc/monres is readable by monres user for config file
 
@@ -20,7 +20,7 @@ RestartSec=5s
 
 # Environment variables for sensitive data
 # It's better to use EnvironmentFile for multiple secrets
-EnvironmentFile=/etc/monres/monres.env # This file should have 0600 permissions, owned by monresuser
+EnvironmentFile=/etc/monres/monres.env
 
 # Standard output and error logging
 StandardOutput=journal
@@ -31,9 +31,9 @@ StandardError=journal
 # PrivateTmp=true
 # ProtectSystem=strict # Mounts /usr, /boot, /etc as read-only for the service
 # ProtectHome=true     # Makes home directories inaccessible
-ReadOnlyPaths=/etc/monres # If config is here and not modified by app
+ReadOnlyPaths=/etc/monres
 
-CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_NET_ADMIN # Drop unnecessary capabilities
+CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_NET_ADMIN
 # Minimal capabilities needed:
 # - Reading /proc, /sys doesn't typically require special capabilities if file permissions allow.
 # - Network for notifications.
