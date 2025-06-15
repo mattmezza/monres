@@ -1,11 +1,9 @@
 # monres - Lightweight VPS Resource Monitor
 
 monres is a simple, lightweight, and easy-to-install software tool for monitoring
-core system resources (CPU, Memory, Disk I/O, Network I/O) on an Ubuntu VPS.
+core system resources (CPU, Memory, Disk I/O, Network I/O) on a linux VPS.
 It runs as a background service, triggers alerts based on user-defined thresholds,
 and sends notifications via Email and Telegram.
-
-Version: 1.1
 
 ## Features
 
@@ -15,7 +13,6 @@ Version: 1.1
 - Notifications via Email (SMTP) and Telegram.
 - Customizable notification templates.
 - Sensitive credentials read from environment variables.
-- Persistent alert state across restarts.
 - Designed for minimal resource consumption.
 - Single binary deployment (Go).
 - systemd service for management.
@@ -25,7 +22,7 @@ Version: 1.1
 ### Prerequisites
 
 - Go (latest stable version, for building)
-- An Ubuntu VPS
+- A linux VPS (tested on Ubuntu)
 
 ### Building from Source
 
@@ -46,6 +43,9 @@ Version: 1.1
     sudo cp monres /usr/local/bin/
     ```
 
+For your convenience, a Makefile is provided.
+
+
 ### Configuration
 
 1.  Create the configuration directory:
@@ -58,7 +58,8 @@ Version: 1.1
     sudo cp config.example.yaml /etc/monres/config.yaml
     ```
 
-3.  Edit `/etc/monres/config.yaml` to suit your needs. Refer to the comments within the file and the "Configuration Details" section below.
+3.  Edit `/etc/monres/config.yaml` to suit your needs. Refer to the comments
+    within the file and the "Configuration Details" section below.
 
 4.  Create the environment file for sensitive credentials:
     ```bash
@@ -68,11 +69,14 @@ Version: 1.1
     ```
     Edit `/etc/monres/monres.env` and add your secrets, for example:
     ```ini
-    RESMON_SMTP_PASSWORD_CRITICAL_EMAIL="your_smtp_password"
-    RESMON_TELEGRAM_TOKEN_OPS_TELEGRAM="your_telegram_bot_token"
+    MONRES_SMTP_PASSWORD_EMAIL="your_smtp_password"
+    MONRES_TELEGRAM_TOKEN_TELEGRAM="your_telegram_bot_token"
     ```
-    The environment variable names are constructed as `RESMON_<SENSITIVE_FIELD_UPPERCASE>_<CHANNEL_NAME_UPPERCASE_UNDERSCORED>`.
-    For example, for a channel named `my-email-channel` and field `smtp_password`, the env var would be `RESMON_SMTP_PASSWORD_MY_EMAIL_CHANNEL`.
+    The environment variable names are constructed as
+    `MONRES_<SENSITIVE_FIELD_UPPERCASE>_<CHANNEL_NAME_UPPERCASE_UNDERSCORED>`.
+    For example, for a channel named `my-email-channel` and field
+    `smtp_password`, the env var would be
+    `MONRES_SMTP_PASSWORD_MY_EMAIL_CHANNEL`.
 
 ### Setup as a Systemd Service
 
@@ -80,7 +84,6 @@ Version: 1.1
     ```bash
     sudo groupadd --system monres
     sudo useradd --system --gid monres --shell /sbin/nologin --home-dir /var/lib/monres monres
-    sudo mkdir -p /var/lib/monres
     sudo chown -R monres:monres /var/lib/monres
     # Grant read access to config for the monres user
     sudo chown root:monres /etc/monres # dir owned by root, group readable by monres
@@ -90,7 +93,6 @@ Version: 1.1
     # Ensure monres.env is also correctly permissioned and owned as above
     sudo chown monres:monres /etc/monres/monres.env
     sudo chmod 600 /etc/monres/monres.env
-
     ```
 
 2.  Copy the systemd service file:
@@ -113,7 +115,30 @@ Version: 1.1
 
 ## Configuration Details
 
-*(Explain `interval_seconds`, `state_file`, `hostname`, `alerts` (all fields), `notification_channels` (all fields per type), `templates` here)*
+- `interval_seconds`: The interval in seconds at which metrics are collected
+  and alerts are evaluated. Default is `1` (every second).
+- `hostname`: The hostname of the VPS, used in notifications.
+  Default is the system's hostname.
+- `alerts`: A list of alert configurations. Each alert has:
+  - `name`: Unique identifier for the alert.
+  - `metric`: The metric to monitor (e.g., `cpu_percent_total`). See below for
+    the full list of metrics.
+  - `threshold`: The threshold value that triggers the alert.
+  - `condition`: The operator for the threshold condition
+    (i.e. `>`, `<`, `>=`, `<=`).
+  - `duration`: The duration over which the metric must exceed the threshold to
+    trigger the alert.
+  - `aggregation`: How to aggregate the metric values (i.e. `avg`, `max`).
+  - `channels`: List of channels to notify when the alert is triggered.
+- `notification_channels`: A list of notification channels. Each channel has:
+    - `type`: The type of channel (i.e. `email`, `telegram`, `stdout`).
+    - `name`: Unique identifier for the channel. This is used to reference the
+      channel in the alerts configuration.
+    - `config`: Configuration specific to the channel type (e.g., SMTP settings
+      for email, bot token for Telegram).
+- `templates`: Customizable notification templates for each alert state (fired
+  or resolved). Each template can include placeholders for dynamic content
+  (e.g., `{{ .AlertName }}`, `{{ .MetricValue }}`). See the example config.
 
 ## Metrics Collected
 
@@ -126,10 +151,3 @@ Version: 1.1
 -   `disk_write_bytes_ps`: Aggregated disk write bytes per second.
 -   `net_recv_bytes_ps`: Aggregated network received bytes per second.
 -   `net_sent_bytes_ps`: Aggregated network transmitted bytes per second.
-
-## Testing
-
-(Details on how to run unit/integration tests if provided)
-
-```bash
-go test ./...
