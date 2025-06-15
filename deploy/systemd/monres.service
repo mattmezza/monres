@@ -1,6 +1,6 @@
 [Unit]
 Description=Lightweight VPS Resource Monitor (monres)
-Documentation=https://github.com/yourusername/monres/README.md
+Documentation=https://github.com/mattmezza/monres/README.md
 After=network-online.target
 Wants=network-online.target
 
@@ -31,7 +31,6 @@ StandardError=journal
 # PrivateTmp=true
 # ProtectSystem=strict # Mounts /usr, /boot, /etc as read-only for the service
 # ProtectHome=true     # Makes home directories inaccessible
-ReadWritePaths=/var/lib/monres # Only if state_file is here
 ReadOnlyPaths=/etc/monres # If config is here and not modified by app
 
 CapabilityBoundingSet=~CAP_SYS_ADMIN CAP_NET_ADMIN # Drop unnecessary capabilities

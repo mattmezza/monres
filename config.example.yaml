@@ -58,7 +58,7 @@ notification_channels:
       smtp_port: 587
       smtp_username: "smtp@example.com"
       # smtp_password: "" # Read from MONRES_SMTP_PASSWORD_CRITICAL_EMAIL
-      smtp_from: "Monres Alerts <monres@example.co>"
+      smtp_from: "Monres <monres@example.com>"
       smtp_to: ["me@example.com", "ops@example.com"]
       smtp_use_tls: true # true for STARTTLS, false for no TLS/SSL. For explicit SSL, port is usually 465.
 
