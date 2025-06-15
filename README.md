@@ -1,6 +1,8 @@
 # monres - Lightweight VPS Resource Monitor
 
-![monres logo](https://raw.githubusercontent.com/mattmezza/monres/main/icon.png)
+<div align="center">
+    <img src="https://raw.githubusercontent.com/mattmezza/monres/main/icon.png" alt="Monres logo" width="175px" height="175px">
+</div>
 
 monres is a simple, lightweight, and easy-to-install software tool for monitoring
 core system resources (CPU, Memory, Disk I/O, Network I/O) on a linux VPS.
