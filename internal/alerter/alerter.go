@@ -34,7 +34,6 @@ type Alerter struct {
 	notifiers     map[string]notifier.Notifier // map channel name to notifier instance
 	templates     notifier.NotificationTemplates
 	hostname      string
-	stateFile     string
 	mu            sync.Mutex // Protects rules' states
 }
 
@@ -43,30 +42,14 @@ func NewAlerter(cfg *config.Config, histBuffer *history.MetricHistoryBuffer, con
 		historyBuffer: histBuffer,
 		notifiers:     configuredNotifiers,
 		hostname:      cfg.EffectiveHostname,
-		stateFile:     cfg.StateFile, // For direct saving if needed, though usually main manages
 		templates: notifier.NotificationTemplates{
 			FiredTemplate:    cfg.Templates.AlertFired,
 			ResolvedTemplate: cfg.Templates.AlertResolved,
 		},
 	}
 
-	// Load initial alert states
-	initialStates, err := state.LoadState(cfg.StateFile)
-	if err != nil {
-		log.Printf("Warning: Could not load initial alert states from %s: %v. Starting with all alerts inactive.", cfg.StateFile, err)
-		initialStates = make(state.ActiveAlertsState)
-	}
-
-
 	for _, ruleCfg := range cfg.Alerts {
 		rule := NewAlertRule(ruleCfg)
-		if active, found := initialStates[rule.Name]; found && active {
-			rule.State.IsActive = true
-			// To prevent re-firing immediately, we might need to set LastActiveTime appropriately.
-			// For now, just loading IsActive is fine; it prevents "resolved" on startup for already active.
-			// And prevents "fired" on startup for already active.
-			log.Printf("Alert rule '%s' loaded as initially ACTIVE from state file.", rule.Name)
-		}
 		a.rules = append(a.rules, rule)
 	}
 

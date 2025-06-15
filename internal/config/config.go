@@ -12,7 +12,6 @@ import (
 
 type Config struct {
 	IntervalSeconds    int                    `yaml:"interval_seconds"`
-	StateFile          string                 `yaml:"state_file"`
 	HostnameOverride   string                 `yaml:"hostname"` // Field for Hostname
 	Alerts             []AlertRuleConfig      `yaml:"alerts"`
 	NotificationChannels []NotificationChannelConfig `yaml:"notification_channels"`
@@ -75,10 +74,6 @@ func LoadConfig(filePath string) (*Config, error) {
 		cfg.IntervalSeconds = 30 // Default
 	}
 	cfg.CollectionInterval = time.Duration(cfg.IntervalSeconds) * time.Second
-
-	if cfg.StateFile == "" {
-		return nil, fmt.Errorf("state_file path must be configured")
-	}
 
 	if strings.TrimSpace(cfg.HostnameOverride) != "" {
 		cfg.EffectiveHostname = cfg.HostnameOverride

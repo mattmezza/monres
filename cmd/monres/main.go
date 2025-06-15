@@ -13,7 +13,6 @@ import (
 	"github.com/mattmezza/monres/internal/config"
 	"github.com/mattmezza/monres/internal/history"
 	"github.com/mattmezza/monres/internal/notifier"
-	"github.com/mattmezza/monres/internal/state"
 )
 
 var configFile string
@@ -33,8 +32,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("FATAL: Failed to load configuration from %s: %v", configFile, err)
 	}
-	log.Printf("Configuration loaded successfully from %s. Interval: %ds, StateFile: %s, Hostname: %s",
-            configFile, cfg.IntervalSeconds, cfg.StateFile, cfg.EffectiveHostname)
+	log.Printf("Configuration loaded successfully from %s. Interval: %ds, Hostname: %s",
+            configFile, cfg.IntervalSeconds, cfg.EffectiveHostname)
 
 
 	// Initialize Metric History Buffer
@@ -135,15 +134,7 @@ func main() {
 
 		case sig := <-shutdownSignal:
 			log.Printf("Received signal: %s. Shutting down gracefully...", sig)
-
-			// Save current alert states
-			currentActiveAlerts := alertProcessor.GetCurrentActiveAlerts()
-			err := state.SaveState(cfg.StateFile, currentActiveAlerts)
-			if err != nil {
-				log.Printf("Error saving alert states to %s: %v", cfg.StateFile, err)
-			} else {
-				log.Printf("Successfully saved current alert states to %s.", cfg.StateFile)
-			}
+			// Perform any necessary cleanup here
 			log.Println("monres shut down.")
 			return
 		}
