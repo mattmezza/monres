@@ -1,10 +1,13 @@
-.PHONY: build clean install uninstall reinstall
+.PHONY: build clean install uninstall reinstall release help
 
 help:
 	@echo "Usage:"
 	@echo "  make build   - Build the monres executable"
 	@echo "  make clean   - Clean up build artifacts"
 	@echo "  make install - Install monres and its systemd service"
+	@echo "  make uninstall - Uninstall monres and remove user/group"
+	@echo "  make reinstall - Reinstall monres"
+	@echo "  make release name=<release_name> - Create a release with the specified name"
 build:
 	go build -ldflags="-s -w" -o monres cmd/monres/main.go
 	@echo "Build complete. Executable: ./monres"
@@ -40,3 +43,11 @@ uninstall: clean del-user
 	@echo "Monres uninstalled successfully."
 reinstall: uninstall install
 	@echo "Monres reinstalled successfully."
+release:
+	gh release create $(name) \
+		--title "Release $(name)" \
+		--notes "Release notes for version $(name)" \
+		./monres
+	@echo "Release created successfully."
+	git push --tags
+	@echo "Changes pushed to remote repository."
