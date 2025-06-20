@@ -1,0 +1,2091 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>monres: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/mattmezza/monres/cmd/monres/main.go (2.8%)</option>
+				
+				<option value="file1">github.com/mattmezza/monres/internal/alerter/alerter.go (0.0%)</option>
+				
+				<option value="file2">github.com/mattmezza/monres/internal/alerter/rule.go (0.0%)</option>
+				
+				<option value="file3">github.com/mattmezza/monres/internal/collector/collector.go (90.7%)</option>
+				
+				<option value="file4">github.com/mattmezza/monres/internal/collector/cpu.go (77.0%)</option>
+				
+				<option value="file5">github.com/mattmezza/monres/internal/collector/disk.go (73.7%)</option>
+				
+				<option value="file6">github.com/mattmezza/monres/internal/collector/memory.go (78.7%)</option>
+				
+				<option value="file7">github.com/mattmezza/monres/internal/collector/network.go (73.8%)</option>
+				
+				<option value="file8">github.com/mattmezza/monres/internal/config/config.go (85.1%)</option>
+				
+				<option value="file9">github.com/mattmezza/monres/internal/history/buffer.go (81.6%)</option>
+				
+				<option value="file10">github.com/mattmezza/monres/internal/notifier/email.go (8.1%)</option>
+				
+				<option value="file11">github.com/mattmezza/monres/internal/notifier/notifier.go (82.4%)</option>
+				
+				<option value="file12">github.com/mattmezza/monres/internal/notifier/stdout.go (81.8%)</option>
+				
+				<option value="file13">github.com/mattmezza/monres/internal/notifier/telegram.go (89.1%)</option>
+				
+				<option value="file14">github.com/mattmezza/monres/internal/util/parse_util.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "flag"
+        "log"
+        "os"
+        "os/signal"
+        "strings"
+        "syscall"
+        "time"
+
+        "github.com/mattmezza/monres/internal/alerter"
+        "github.com/mattmezza/monres/internal/collector"
+        "github.com/mattmezza/monres/internal/config"
+        "github.com/mattmezza/monres/internal/history"
+        "github.com/mattmezza/monres/internal/notifier"
+)
+
+var configFile string
+
+func init() <span class="cov8" title="1">{
+        flag.StringVar(&amp;configFile, "config", "config.yaml", "Path to the configuration file.")
+        // Set up logger
+        log.SetOutput(os.Stdout) // Systemd will capture this
+        log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}</span>
+
+func testNotification(configPath, channelName string) <span class="cov0" title="0">{
+        log.Println("Testing notification channels...")
+        
+        // Load configuration
+        cfg, err := config.LoadConfig(configPath)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("FATAL: Failed to load configuration from %s: %v", configPath, err)
+        }</span>
+        
+        // Check if specific channel exists in config
+        <span class="cov0" title="0">if channelName != "" </span><span class="cov0" title="0">{
+                found := false
+                var availableChannels []string
+                for _, channel := range cfg.NotificationChannels </span><span class="cov0" title="0">{
+                        availableChannels = append(availableChannels, channel.Name)
+                        if channel.Name == channelName </span><span class="cov0" title="0">{
+                                found = true
+                        }</span>
+                }
+                <span class="cov0" title="0">if !found </span><span class="cov0" title="0">{
+                        if len(availableChannels) &gt; 0 </span><span class="cov0" title="0">{
+                                log.Fatalf("ERROR: Channel '%s' not found in configuration. Available channels: %s", 
+                                        channelName, strings.Join(availableChannels, ", "))
+                        }</span> else<span class="cov0" title="0"> {
+                                log.Fatalf("ERROR: Channel '%s' not found and no notification channels configured", channelName)
+                        }</span>
+                }
+        }
+        
+        // Initialize notifiers
+        <span class="cov0" title="0">configuredNotifiers, err := notifier.InitializeNotifiers(cfg.NotificationChannels)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("FATAL: Failed to initialize notifiers: %v", err)
+        }</span>
+        
+        <span class="cov0" title="0">if len(configuredNotifiers) == 0 </span><span class="cov0" title="0">{
+                log.Fatalf("ERROR: No notification channels were successfully initialized")
+        }</span>
+        
+        // Create test notification data
+        <span class="cov0" title="0">testData := notifier.NotificationData{
+                AlertName:      "Test Alert",
+                MetricName:     "test_metric",
+                MetricValue:    42.5,
+                ThresholdValue: 40.0,
+                Condition:      "&gt;",
+                State:          "FIRED",
+                Hostname:       cfg.EffectiveHostname,
+                Time:           time.Now(),
+                DurationString: "1m",
+                Aggregation:    "average",
+        }
+        
+        templates := notifier.NotificationTemplates{
+                FiredTemplate:    cfg.Templates.AlertFired,
+                ResolvedTemplate: cfg.Templates.AlertResolved,
+        }
+        
+        // Test specific channel or all channels
+        if channelName != "" </span><span class="cov0" title="0">{
+                // Test specific channel
+                if notifierInstance, exists := configuredNotifiers[channelName]; exists </span><span class="cov0" title="0">{
+                        log.Printf("Testing notification channel: %s", channelName)
+                        err := notifierInstance.Send(testData, templates)
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.Fatalf("ERROR: Failed to send test notification to channel '%s': %v", channelName, err)
+                        }</span>
+                        <span class="cov0" title="0">log.Printf("✅ Test notification sent successfully to channel: %s", channelName)</span>
+                } else<span class="cov0" title="0"> {
+                        log.Fatalf("ERROR: Channel '%s' was not successfully initialized", channelName)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                // Test all channels
+                log.Printf("Testing all %d configured notification channels...", len(configuredNotifiers))
+                successCount := 0
+                for name, notifierInstance := range configuredNotifiers </span><span class="cov0" title="0">{
+                        log.Printf("Testing channel: %s", name)
+                        err := notifierInstance.Send(testData, templates)
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.Printf("❌ Failed to send test notification to channel '%s': %v", name, err)
+                        }</span> else<span class="cov0" title="0"> {
+                                log.Printf("✅ Test notification sent successfully to channel: %s", name)
+                                successCount++
+                        }</span>
+                }
+                <span class="cov0" title="0">log.Printf("Test completed: %d/%d channels successful", successCount, len(configuredNotifiers))
+                if successCount == 0 </span><span class="cov0" title="0">{
+                        log.Fatalf("ERROR: All notification channels failed")
+                }</span>
+        }
+}
+
+func main() <span class="cov0" title="0">{
+        flag.Parse()
+        
+        // Check if test-notification subcommand is provided
+        args := flag.Args()
+        if len(args) &gt; 0 &amp;&amp; args[0] == "test-notification" </span><span class="cov0" title="0">{
+                var channelName string
+                if len(args) &gt; 1 </span><span class="cov0" title="0">{
+                        channelName = args[1]
+                }</span>
+                <span class="cov0" title="0">testNotification(configFile, channelName)
+                return</span>
+        }
+        
+        <span class="cov0" title="0">log.Println("Starting monres...")
+
+        cfg, err := config.LoadConfig(configFile)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("FATAL: Failed to load configuration from %s: %v", configFile, err)
+        }</span>
+        <span class="cov0" title="0">log.Printf("Configuration loaded successfully from %s. Interval: %ds, Hostname: %s",
+            configFile, cfg.IntervalSeconds, cfg.EffectiveHostname)
+
+
+        // Initialize Metric History Buffer
+        // Determine max history needed based on alert rule durations
+        maxHistDuration := history.GetMaxConfiguredDuration(cfg.Alerts, cfg.CollectionInterval)
+        if maxHistDuration == 0 &amp;&amp; len(cfg.Alerts) &gt; 0 </span><span class="cov0" title="0">{ // No duration specified in any rule, but alerts exist
+            // Need some minimal history for instantaneous alerts if they rely on the buffer
+            // e.g. to hold at least the last 2 samples for any rate calculations or just the last sample.
+            // If GetMaxConfiguredDuration returns 0 because no rule has a duration &gt; 0,
+            // we still need a buffer that can hold at least one, preferably a few, data points.
+            // The NewMetricHistoryBuffer has a minimum size logic.
+        log.Printf("No explicit durations in alerts, using default history buffer capacity (based on 2x collection interval).")
+        }</span> else<span class="cov0" title="0"> {
+        log.Printf("Initializing metric history buffer for max duration: %s (collection interval: %s)", maxHistDuration, cfg.CollectionInterval)
+    }</span>
+        <span class="cov0" title="0">metricHist := history.NewMetricHistoryBuffer(maxHistDuration, cfg.CollectionInterval)
+
+
+        // Initialize Metric Collectors
+        metricCollector := collector.NewGlobalCollector()
+        log.Println("Metric collectors initialized.")
+
+        // Initialize Notifiers
+        configuredNotifiers, err := notifier.InitializeNotifiers(cfg.NotificationChannels)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("FATAL: Failed to initialize notifiers: %v", err)
+        }</span>
+        <span class="cov0" title="0">if len(configuredNotifiers) == 0 &amp;&amp; len(cfg.Alerts) &gt; 0 </span><span class="cov0" title="0">{
+        log.Println("Warning: Alerts are configured, but no notification channels were successfully initialized.")
+    }</span> else<span class="cov0" title="0"> {
+        log.Printf("%d notification channel(s) initialized.", len(configuredNotifiers))
+    }</span>
+
+
+        // Initialize Alerter (loads initial state itself)
+        <span class="cov0" title="0">alertProcessor, err := alerter.NewAlerter(cfg, metricHist, configuredNotifiers)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("FATAL: Failed to initialize alerter: %v", err)
+        }</span>
+        <span class="cov0" title="0">log.Println("Alerter initialized. Loaded initial alert states.")
+
+        // Setup Graceful Shutdown
+        shutdownSignal := make(chan os.Signal, 1)
+        signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGTERM)
+
+        // Main Application Loop
+        ticker := time.NewTicker(cfg.CollectionInterval)
+        defer ticker.Stop()
+
+        log.Println("monres started. Monitoring resources...")
+
+        // Initial collection to populate previous values for rate calculations
+        // This will mean the first set of rates might be 0 or based on a very short interval if run immediately.
+        // The GlobalCollector handles this by returning 0 for rates on the first pass.
+        log.Println("Performing initial metric collection...")
+        initialMetrics, err := metricCollector.CollectAll()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Warning: Error during initial metric collection: %v", err)
+        }</span> else<span class="cov0" title="0"> {
+                now := time.Now()
+                for name, val := range initialMetrics </span><span class="cov0" title="0">{
+                        metricHist.AddDataPoint(name, val, now)
+                }</span>
+                <span class="cov0" title="0">log.Printf("Initial metrics collected. %d data points added to history.", len(initialMetrics))
+                // Run alerter once after initial collection to catch immediate state changes for non-duration alerts.
+        // This is important if an alert condition is met by the very first data sample.
+                log.Println("Performing initial alert evaluation pass...")
+                alertProcessor.CheckAndNotify(now, initialMetrics)
+        log.Println("Initial alert evaluation complete.")</span>
+        }
+
+
+        <span class="cov0" title="0">for </span><span class="cov0" title="0">{
+                select </span>{
+                case &lt;-ticker.C:<span class="cov0" title="0">
+                        currentTime := time.Now()
+                        collectedData, err := metricCollector.CollectAll()
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.Printf("Error during metric collection cycle: %v", err)
+                                // Continue, try next cycle. Some metrics might have been collected.
+                        }</span>
+                        <span class="cov0" title="0">if len(collectedData) == 0 &amp;&amp; err == nil </span><span class="cov0" title="0">{
+                                log.Println("No metrics collected in this cycle.")
+                        }</span> else<span class="cov0" title="0"> {
+                 log.Printf("%d metrics added to history.", len(collectedData))
+            }</span>
+
+
+                        <span class="cov0" title="0">for name, value := range collectedData </span><span class="cov0" title="0">{
+                                metricHist.AddDataPoint(name, value, currentTime)
+                                // if you want to debug or log each metric value:
+                                // log.Printf("Metric %s: %v", name, value)
+                        }</span>
+
+                        <span class="cov0" title="0">alertProcessor.CheckAndNotify(currentTime, collectedData)</span>
+
+                case sig := &lt;-shutdownSignal:<span class="cov0" title="0">
+                        log.Printf("Received signal: %s. Shutting down gracefully...", sig)
+                        // Perform any necessary cleanup here
+                        log.Println("monres shut down.")
+                        return</span>
+                }
+        }
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package alerter
+
+import (
+        "log"
+        "sync"
+        "time"
+
+        "github.com/mattmezza/monres/internal/collector"
+        "github.com/mattmezza/monres/internal/config"
+        "github.com/mattmezza/monres/internal/history"
+        "github.com/mattmezza/monres/internal/notifier"
+        "github.com/mattmezza/monres/internal/state"
+)
+
+type EventType string
+
+const (
+        EventTypeFired    EventType = "FIRED"
+        EventTypeResolved EventType = "RESOLVED"
+)
+
+type AlertEvent struct {
+        Rule          *AlertRule
+        Type          EventType
+        Hostname      string
+        Timestamp     time.Time
+        MetricValue   float64 // The value that caused the state change
+        TriggeringPoints []history.DataPoint // Optional: points that led to this state
+}
+
+type Alerter struct {
+        rules         []*AlertRule
+        historyBuffer *history.MetricHistoryBuffer
+        notifiers     map[string]notifier.Notifier // map channel name to notifier instance
+        templates     notifier.NotificationTemplates
+        hostname      string
+        mu            sync.Mutex // Protects rules' states
+}
+
+func NewAlerter(cfg *config.Config, histBuffer *history.MetricHistoryBuffer, configuredNotifiers map[string]notifier.Notifier) (*Alerter, error) <span class="cov0" title="0">{
+        a := &amp;Alerter{
+                historyBuffer: histBuffer,
+                notifiers:     configuredNotifiers,
+                hostname:      cfg.EffectiveHostname,
+                templates: notifier.NotificationTemplates{
+                        FiredTemplate:    cfg.Templates.AlertFired,
+                        ResolvedTemplate: cfg.Templates.AlertResolved,
+                },
+        }
+
+        for _, ruleCfg := range cfg.Alerts </span><span class="cov0" title="0">{
+                rule := NewAlertRule(ruleCfg)
+                a.rules = append(a.rules, rule)
+        }</span>
+
+        <span class="cov0" title="0">return a, nil</span>
+}
+
+// CheckAndNotify evaluates all rules and sends notifications if state changes.
+func (a *Alerter) CheckAndNotify(now time.Time, currentMetrics collector.CollectedMetrics) <span class="cov0" title="0">{
+        a.mu.Lock()
+        defer a.mu.Unlock()
+
+        var events []AlertEvent
+
+        for _, rule := range a.rules </span><span class="cov0" title="0">{
+                metricValuePoints := a.historyBuffer.GetDataPointsForDuration(rule.Metric, rule.Duration, now)
+
+                // Rule evaluation can only happen if enough data exists for the duration window
+                if rule.Duration &gt; 0 </span><span class="cov0" title="0">{
+                        if len(metricValuePoints) == 0 </span><span class="cov0" title="0">{
+                                log.Printf("Alerter: Not enough data points yet for duration based rule '%s' (metric: %s, duration: %s). Skipping.", rule.Name, rule.Metric, rule.DurationStr)
+                                continue</span> // Not enough data yet
+                        }
+                        // Check if the actual timespan of collected points covers the rule's duration
+                        // This is crucial for new services or after gaps in collection
+                        <span class="cov0" title="0">if len(metricValuePoints) &gt; 0 </span><span class="cov0" title="0">{
+                                firstPointTime := metricValuePoints[0].Timestamp
+                                // Allow a small tolerance (e.g., 100ms) for time variations
+                                if now.Sub(firstPointTime) &lt; rule.Duration - 100*time.Millisecond </span><span class="cov0" title="0">{
+                                        log.Printf("Alerter: Data points for rule '%s' (metric: %s) span %s, which is less than required duration %s. Skipping.",
+                                        rule.Name, rule.Metric, now.Sub(firstPointTime).String(), rule.Duration.String())
+                                        continue</span> // Not enough history accumulated yet
+                                }
+                        }
+                } else<span class="cov0" title="0"> { // Instantaneous alert
+                    latestDP, exists := a.historyBuffer.GetLatestDataPoint(rule.Metric)
+                    if !exists </span><span class="cov0" title="0">{
+                        log.Printf("Alerter: No data point found for instantaneous rule '%s' (metric: %s). Skipping.", rule.Name, rule.Metric)
+                        continue</span>
+                    }
+                    <span class="cov0" title="0">metricValuePoints = []history.DataPoint{latestDP}</span> // Evaluate on this single point
+                }
+
+
+                <span class="cov0" title="0">conditionMet, aggregatedValue, err := rule.Evaluate(metricValuePoints)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Error evaluating rule '%s': %v", rule.Name, err)
+                        continue</span>
+                }
+
+                <span class="cov0" title="0">if conditionMet &amp;&amp; !rule.State.IsActive </span><span class="cov0" title="0">{
+                        // Alert FIRED
+                        rule.State.IsActive = true
+                        rule.State.LastActiveTime = now
+                        rule.State.LastValue = aggregatedValue
+                        events = append(events, AlertEvent{
+                                Rule:        rule,
+                                Type:        EventTypeFired,
+                                Hostname:    a.hostname,
+                                Timestamp:   now,
+                                MetricValue: aggregatedValue,
+                        })
+                        log.Printf("ALERT FIRED: %s (Metric: %s %s %.2f, Current: %.2f)", rule.Name, rule.Metric, rule.Condition, rule.Threshold, aggregatedValue)
+
+                }</span> else<span class="cov0" title="0"> if !conditionMet &amp;&amp; rule.State.IsActive </span><span class="cov0" title="0">{
+                        // Alert RESOLVED
+                        rule.State.IsActive = false
+                        rule.State.LastResolvedTime = now
+                        rule.State.LastValue = aggregatedValue // Value at time of resolution
+                        events = append(events, AlertEvent{
+                                Rule:        rule,
+                                Type:        EventTypeResolved,
+                                Hostname:    a.hostname,
+                                Timestamp:   now,
+                                MetricValue: aggregatedValue,  // Could be current value which is now "good"
+                        })
+                        log.Printf("ALERT RESOLVED: %s", rule.Name)
+                }</span>
+        }
+
+        // Send notifications outside the loop to avoid holding lock for too long if notifiers are slow
+        // Unlock isn't needed here if defer is used, but good to keep in mind for complex locking
+        // a.mu.Unlock()
+
+        <span class="cov0" title="0">for _, event := range events </span><span class="cov0" title="0">{
+                a.sendNotificationsForRule(event)
+        }</span>
+    // a.mu.Lock() // Re-lock if needed for further state ops, covered by defer
+}
+
+func (a *Alerter) sendNotificationsForRule(event AlertEvent) <span class="cov0" title="0">{
+        for _, channelName := range event.Rule.Channels </span><span class="cov0" title="0">{
+                notifierInstance, ok := a.notifiers[channelName]
+                if !ok </span><span class="cov0" title="0">{
+                        log.Printf("Warning: Notification channel '%s' for alert '%s' not found/configured.", channelName, event.Rule.Name)
+                        continue</span>
+                }
+
+                // Prepare notification context
+                <span class="cov0" title="0">data := notifier.NotificationData{
+                        AlertName:      event.Rule.Name,
+                        MetricName:     event.Rule.Metric,
+                        MetricValue:    event.MetricValue, // The value causing state change
+                        ThresholdValue: event.Rule.Threshold,
+                        Condition:      event.Rule.Condition,
+                        State:          string(event.Type),
+                        Hostname:       a.hostname,
+                        Time:           event.Timestamp,
+                        DurationString: event.Rule.DurationStr,
+                        Aggregation:    event.Rule.Aggregation,
+                }
+
+                err := notifierInstance.Send(data, a.templates)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Failed to send notification for alert '%s' via channel '%s': %v", event.Rule.Name, channelName, err)
+                }</span> else<span class="cov0" title="0"> {
+                        log.Printf("Notification sent for alert '%s' via channel '%s' (State: %s)", event.Rule.Name, channelName, event.Type)
+                }</span>
+        }
+}
+
+// GetCurrentActiveAlerts returns a map of active alert names for state saving.
+func (a *Alerter) GetCurrentActiveAlerts() state.ActiveAlertsState <span class="cov0" title="0">{
+        a.mu.Lock()
+        defer a.mu.Unlock()
+
+        activeStates := make(state.ActiveAlertsState)
+        for _, rule := range a.rules </span><span class="cov0" title="0">{
+                if rule.State.IsActive </span><span class="cov0" title="0">{
+                        activeStates[rule.Name] = true
+                }</span>
+        }
+        <span class="cov0" title="0">return activeStates</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package alerter
+
+import (
+        "fmt"
+        "strings"
+        "time"
+
+        "github.com/mattmezza/monres/internal/config" // Corrected import path
+        "github.com/mattmezza/monres/internal/history"
+)
+
+// AlertState represents the current status of an alert.
+type AlertState struct {
+        IsActive         bool
+        LastActiveTime   time.Time // When it last became active
+        LastResolvedTime time.Time // When it last became resolved
+        LastValue        float64   // The value that triggered/resolved the alert
+}
+
+// AlertRule is the runtime representation of an alert rule.
+type AlertRule struct {
+        config.AlertRuleConfig
+        State AlertState
+}
+
+func NewAlertRule(cfg config.AlertRuleConfig) *AlertRule <span class="cov0" title="0">{
+        return &amp;AlertRule{
+                AlertRuleConfig: cfg,
+                State: AlertState{
+                        IsActive: false, // Initial state
+                },
+        }
+}</span>
+
+// Evaluate processes a set of data points against the rule.
+// Returns true if the alert condition is met, the aggregated value, and any error.
+func (ar *AlertRule) Evaluate(points []history.DataPoint) (conditionMet bool, aggregatedValue float64, err error) <span class="cov0" title="0">{
+        if len(points) == 0 &amp;&amp; ar.Duration &gt; 0 </span><span class="cov0" title="0">{
+                return false, 0, fmt.Errorf("not enough data points for duration-based alert '%s'", ar.Name)
+        }</span>
+    <span class="cov0" title="0">if len(points) == 0 &amp;&amp; ar.Duration == 0 </span><span class="cov0" title="0">{ // Instantaneous check but no data yet
+        return false, 0, fmt.Errorf("no data point available for instantaneous alert '%s'", ar.Name)
+    }</span>
+
+
+        <span class="cov0" title="0">var valueToCompare float64
+
+        if ar.Duration == 0 </span><span class="cov0" title="0">{ // Instantaneous: use the latest point
+                if len(points) &gt; 0 </span><span class="cov0" title="0">{
+                        valueToCompare = points[len(points)-1].Value
+                }</span> else<span class="cov0" title="0"> {
+                        return false, 0, fmt.Errorf("no data points for instantaneous alert '%s'", ar.Name) // Should be caught earlier
+                }</span>
+        } else<span class="cov0" title="0"> { // Duration-based: aggregate
+                // Ensure we have enough data for the duration
+                if len(points) == 0 </span><span class="cov0" title="0">{
+                        return false, 0, fmt.Errorf("not enough data points (0) for duration '%s' for alert '%s'", ar.DurationStr, ar.Name)
+                }</span>
+                // Check if the timespan of points covers the required duration.
+                // The history buffer should ideally provide points *within* the duration window.
+                // For simplicity, we assume `points` are correctly filtered by the history buffer.
+                // If not, an additional check here:
+                // firstPointTime := points[0].Timestamp
+                // lastPointTime := points[len(points)-1].Timestamp
+                // if lastPointTime.Sub(firstPointTime) &lt; ar.Duration {
+                //     return false, 0, fmt.Errorf("data points span %s, less than required %s for alert '%s'",
+                //         lastPointTime.Sub(firstPointTime).String(), ar.DurationStr, ar.Name)
+                // }
+
+
+                <span class="cov0" title="0">switch strings.ToLower(ar.Aggregation) </span>{
+                case "average":<span class="cov0" title="0">
+                        sum := 0.0
+                        for _, dp := range points </span><span class="cov0" title="0">{
+                                sum += dp.Value
+                        }</span>
+                        <span class="cov0" title="0">valueToCompare = sum / float64(len(points))</span>
+                case "max":<span class="cov0" title="0">
+                        if len(points) &gt; 0 </span><span class="cov0" title="0">{
+                                valueToCompare = points[0].Value
+                                for _, dp := range points </span><span class="cov0" title="0">{
+                                        if dp.Value &gt; valueToCompare </span><span class="cov0" title="0">{
+                                                valueToCompare = dp.Value
+                                        }</span>
+                                }
+                        } else<span class="cov0" title="0"> {
+                return false, 0, fmt.Errorf("no data points to calculate max for alert '%s'", ar.Name)
+            }</span>
+                default:<span class="cov0" title="0"> // Should be caught by config validation, but default to average or error.
+                        return false, 0, fmt.Errorf("unknown aggregation type '%s' for alert '%s'", ar.Aggregation, ar.Name)</span>
+                }
+        }
+
+        <span class="cov0" title="0">aggregatedValue = valueToCompare // This is the value to report
+
+        switch ar.Condition </span>{
+        case "&gt;":<span class="cov0" title="0">
+                conditionMet = valueToCompare &gt; ar.Threshold</span>
+        case "&lt;":<span class="cov0" title="0">
+                conditionMet = valueToCompare &lt; ar.Threshold</span>
+        case "=":<span class="cov0" title="0">
+                conditionMet = valueToCompare == ar.Threshold</span> // Float equality can be tricky
+        case "!=":<span class="cov0" title="0">
+                conditionMet = valueToCompare != ar.Threshold</span>
+        case "&gt;=":<span class="cov0" title="0">
+                conditionMet = valueToCompare &gt;= ar.Threshold</span>
+        case "&lt;=":<span class="cov0" title="0">
+                conditionMet = valueToCompare &lt;= ar.Threshold</span>
+        default:<span class="cov0" title="0">
+                return false, valueToCompare, fmt.Errorf("unknown condition '%s' for alert '%s'", ar.Condition, ar.Name)</span>
+        }
+
+        <span class="cov0" title="0">return conditionMet, aggregatedValue, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package collector
+
+import (
+        "log"
+        "sync"
+        "time"
+)
+
+// CollectedMetrics holds all metrics gathered in one collection cycle.
+// Using a map allows flexibility for different metrics.
+type CollectedMetrics map[string]float64
+
+// MetricCollector defines the interface for specific collectors.
+type MetricCollector interface {
+        Collect() (CollectedMetrics, error)
+        Name() string // e.g., "cpu", "memory"
+}
+
+// GlobalCollector orchestrates all individual metric collectors.
+type GlobalCollector struct {
+        collectors []MetricCollector
+        // For rate-based metrics like disk/network IO
+        lastDiskStats    *DiskStats      // Pointer to allow nil for first run
+        lastNetworkStats *NetworkStats   // Pointer to allow nil for first run
+        lastCollectTime  time.Time
+        mu               sync.Mutex // Protects last stats and time
+}
+
+func NewGlobalCollector() *GlobalCollector <span class="cov8" title="1">{
+        gc := &amp;GlobalCollector{}
+        // Initialize specific collectors
+        gc.collectors = append(gc.collectors, NewCPUCollector())
+        gc.collectors = append(gc.collectors, NewMemoryCollector())
+        // Disk and Network collectors are special as they calculate rates.
+        // They are implicitly handled by CollectAll method or integrated.
+
+        // For simplicity in this structure, we'll have explicit methods for disk/net
+        // and store their previous states in GlobalCollector.
+        return gc
+}</span>
+
+// CollectAll gathers all metrics from all registered collectors.
+func (gc *GlobalCollector) CollectAll() (CollectedMetrics, error) <span class="cov8" title="1">{
+        gc.mu.Lock()
+        defer gc.mu.Unlock()
+
+        allMetrics := make(CollectedMetrics)
+        now := time.Now()
+        var elapsedSeconds float64
+        if !gc.lastCollectTime.IsZero() </span><span class="cov8" title="1">{
+                elapsedSeconds = now.Sub(gc.lastCollectTime).Seconds()
+        }</span>
+
+
+        // CPU
+        <span class="cov8" title="1">cpuMetrics, err := CollectCPUStats(elapsedSeconds) // Pass elapsed for rate based on previous total/idle
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error collecting CPU metrics: %v", err)
+        }</span> else<span class="cov8" title="1"> {
+                for k, v := range cpuMetrics </span><span class="cov8" title="1">{
+                        allMetrics[k] = v
+                }</span>
+        }
+
+        // Memory
+        <span class="cov8" title="1">memMetrics, err := CollectMemoryStats()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error collecting Memory metrics: %v", err)
+        }</span> else<span class="cov8" title="1"> {
+                for k, v := range memMetrics </span><span class="cov8" title="1">{
+                        allMetrics[k] = v
+                }</span>
+        }
+
+        // Disk I/O
+        <span class="cov8" title="1">currentDiskStats, err := GetDiskStats()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error collecting Disk I/O stats: %v", err)
+        }</span> else<span class="cov8" title="1"> {
+                if gc.lastDiskStats != nil &amp;&amp; elapsedSeconds &gt; 0.1 </span><span class="cov8" title="1">{ // Avoid division by zero or tiny intervals
+                        readBps, writeBps := CalculateDiskIORates(*gc.lastDiskStats, *currentDiskStats, elapsedSeconds)
+                        allMetrics["disk_read_bytes_ps"] = readBps
+                        allMetrics["disk_write_bytes_ps"] = writeBps
+                }</span> else<span class="cov8" title="1"> {
+                        allMetrics["disk_read_bytes_ps"] = 0
+                        allMetrics["disk_write_bytes_ps"] = 0
+                }</span>
+                <span class="cov8" title="1">gc.lastDiskStats = currentDiskStats</span>
+        }
+
+        // Network I/O
+        <span class="cov8" title="1">currentNetStats, err := GetNetworkStats()
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error collecting Network I/O stats: %v", err)
+        }</span> else<span class="cov8" title="1"> {
+                if gc.lastNetworkStats != nil &amp;&amp; elapsedSeconds &gt; 0.1 </span><span class="cov8" title="1">{
+                        recvBps, sentBps := CalculateNetworkIORates(*gc.lastNetworkStats, *currentNetStats, elapsedSeconds)
+                        allMetrics["net_recv_bytes_ps"] = recvBps
+                        allMetrics["net_sent_bytes_ps"] = sentBps
+                }</span> else<span class="cov8" title="1"> {
+                        allMetrics["net_recv_bytes_ps"] = 0
+                        allMetrics["net_sent_bytes_ps"] = 0
+                }</span>
+                <span class="cov8" title="1">gc.lastNetworkStats = currentNetStats</span>
+        }
+
+
+        <span class="cov8" title="1">gc.lastCollectTime = now
+        return allMetrics, nil</span> // Overall error can be nil if some collectors succeed
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package collector
+
+import (
+        "bufio"
+        "fmt"
+        "os"
+        "strconv"
+        "strings"
+        "sync"
+)
+
+// Store previous CPU times to calculate usage delta.
+var (
+        prevCPUTotal uint64
+        prevCPUIdle  uint64
+        cpuOnce      sync.Once
+        cpuMu        sync.Mutex
+)
+
+// CPUStats stores values from /proc/stat for the 'cpu' line.
+type CPUStatLine struct {
+        User      uint64
+        Nice      uint64
+        System    uint64
+        Idle      uint64
+        IOWait    uint64
+        IRQ       uint64
+        SoftIRQ   uint64
+        Steal     uint64
+        Guest     uint64
+        GuestNice uint64
+}
+
+func parseCPUStatLine(line string) (*CPUStatLine, error) <span class="cov8" title="1">{
+        fields := strings.Fields(line)
+        if len(fields) &lt; 9 || fields[0] != "cpu" </span><span class="cov0" title="0">{ // Need at least user, nice, system, idle, iowait, irq, softirq, steal
+                return nil, fmt.Errorf("invalid cpu stat line format")
+        }</span>
+
+        <span class="cov8" title="1">var s CPUStatLine
+        var err error
+
+        s.User, err = strconv.ParseUint(fields[1], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+        <span class="cov8" title="1">s.Nice, err = strconv.ParseUint(fields[2], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+        <span class="cov8" title="1">s.System, err = strconv.ParseUint(fields[3], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+        <span class="cov8" title="1">s.Idle, err = strconv.ParseUint(fields[4], 10, 64)
+        if err != nil </span><span class="cov0" title="0">{ return nil, err }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 5 </span><span class="cov8" title="1">{ s.IOWait, _ = strconv.ParseUint(fields[5], 10, 64) }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 6 </span><span class="cov8" title="1">{ s.IRQ, _ = strconv.ParseUint(fields[6], 10, 64) }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 7 </span><span class="cov8" title="1">{ s.SoftIRQ, _ = strconv.ParseUint(fields[7], 10, 64) }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 8 </span><span class="cov8" title="1">{ s.Steal, _ = strconv.ParseUint(fields[8], 10, 64) }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 9 </span><span class="cov8" title="1">{ s.Guest, _ = strconv.ParseUint(fields[9], 10, 64) }</span>
+        <span class="cov8" title="1">if len(fields) &gt; 10 </span><span class="cov8" title="1">{ s.GuestNice, _ = strconv.ParseUint(fields[10], 10, 64) }</span>
+
+        <span class="cov8" title="1">return &amp;s, nil</span>
+}
+
+func getCPUTimes() (totalTime, idleTime uint64, err error) <span class="cov8" title="1">{
+        file, err := os.Open("/proc/stat")
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, 0, fmt.Errorf("failed to open /proc/stat: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer file.Close()
+
+        scanner := bufio.NewScanner(file)
+        if scanner.Scan() </span><span class="cov8" title="1">{
+                line := scanner.Text()
+                if strings.HasPrefix(line, "cpu ") </span><span class="cov8" title="1">{
+                        stats, err := parseCPUStatLine(line)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return 0, 0, fmt.Errorf("failed to parse cpu line from /proc/stat: %w", err)
+                        }</span>
+
+                        // Total time is sum of all times except Guest and GuestNice if they are already included in User and Nice
+                        // More accurately, total = user + nice + system + idle + iowait + irq + softirq + steal
+                        <span class="cov8" title="1">total := stats.User + stats.Nice + stats.System + stats.Idle + stats.IOWait + stats.IRQ + stats.SoftIRQ + stats.Steal
+                        // Some consider IOWait as idle, others as busy. Common to include in idle for overall usage.
+                        // idle := stats.Idle + stats.IOWait
+                        // For strict CPU busy, idle is just stats.Idle. Let's use simple idle.
+                        idle := stats.Idle
+                        return total, idle, nil</span>
+                }
+        }
+        <span class="cov0" title="0">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                return 0, 0, fmt.Errorf("error scanning /proc/stat: %w", err)
+        }</span>
+        <span class="cov0" title="0">return 0, 0, fmt.Errorf("cpu line not found in /proc/stat")</span>
+}
+
+
+// CollectCPUStats returns total CPU usage percentage.
+// This function is stateful and needs to be called sequentially.
+func CollectCPUStats(elapsedHint float64) (CollectedMetrics, error) <span class="cov8" title="1">{
+        cpuMu.Lock()
+        defer cpuMu.Unlock()
+
+        metrics := make(CollectedMetrics)
+
+        currentTotal, currentIdle, err := getCPUTimes()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // On the first run, we can't calculate a percentage, so store and return 0 or error.
+        // For simplicity, we'll allow it to report 0 on the first valid run if prev values are 0.
+        // The caller (GlobalCollector) manages the elapsed time, so it won't call with elapsedHint=0 after the first time.
+
+        <span class="cov8" title="1">if prevCPUTotal == 0 &amp;&amp; prevCPUIdle == 0 &amp;&amp; elapsedHint &lt;= 0 </span><span class="cov0" title="0">{ // Very first call
+                prevCPUTotal = currentTotal
+                prevCPUIdle = currentIdle
+                metrics["cpu_percent_total"] = 0.0 // Cannot calculate on first sample
+                return metrics, nil
+        }</span>
+
+
+        <span class="cov8" title="1">deltaTotal := currentTotal - prevCPUTotal
+        deltaIdle := currentIdle - prevCPUIdle
+
+        prevCPUTotal = currentTotal
+        prevCPUIdle = currentIdle
+
+        if deltaTotal == 0 </span><span class="cov8" title="1">{ // No change in ticks, or time warped backwards.
+                metrics["cpu_percent_total"] = 0.0
+        }</span> else<span class="cov8" title="1"> {
+                cpuUsage := (1.0 - float64(deltaIdle)/float64(deltaTotal)) * 100.0
+                if cpuUsage &lt; 0 </span><span class="cov0" title="0">{ cpuUsage = 0.0 }</span> // Cap at 0 if deltaIdle &gt; deltaTotal (e.g. time skew)
+                <span class="cov8" title="1">if cpuUsage &gt; 100 </span><span class="cov0" title="0">{ cpuUsage = 100.0 }</span> // Cap at 100
+                <span class="cov8" title="1">metrics["cpu_percent_total"] = cpuUsage</span>
+        }
+
+        <span class="cov8" title="1">return metrics, nil</span>
+}
+
+// For unit testing or direct use if GlobalCollector doesn't handle initialization
+func NewCPUCollector() MetricCollector <span class="cov8" title="1">{
+        return &amp;cpuCollectorAdaptor{}
+}</span>
+
+type cpuCollectorAdaptor struct{}
+
+func (cca *cpuCollectorAdaptor) Collect() (CollectedMetrics, error) <span class="cov8" title="1">{
+        // This simplified adapter implies CollectCPUStats is called by GlobalCollector which manages elapsed time
+        // For standalone, it would need its own prev time tracking.
+        // We rely on GlobalCollector's elapsedSeconds calculation for now.
+        // A truly independent CPUCollector would need its own lastCollectTime.
+        // For the given design, GlobalCollector is managing state for rates, which is fine.
+        return CollectCPUStats(1) // Dummy elapsed, actual elapsed is handled by GlobalCollector
+}</span>
+
+func (cca *cpuCollectorAdaptor) Name() string <span class="cov8" title="1">{
+        return "cpu"
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package collector
+
+import (
+        "bufio"
+        "fmt"
+        "os"
+        "strconv"
+        "strings"
+)
+
+// DiskStats holds aggregated disk I/O counters from /proc/diskstats.
+// We are interested in fields 3 (reads completed) and 7 (sectors written).
+// Field 3: reads completed successfully
+// Field 4: reads merged
+// Field 5: sectors read (1 sector = 512 bytes)
+// Field 6: time spent reading (ms)
+// Field 7: writes completed
+// Field 8: writes merged
+// Field 9: sectors written
+// Field 10: time spent writing (ms)
+type DiskStats struct {
+        TotalSectorsRead    uint64
+        TotalSectorsWritten uint64
+}
+
+const sectorSize = 512 // bytes
+
+// isRelevantDevice checks if the device name from /proc/diskstats is a physical disk or partition we care about.
+// This is a simple heuristic; a more robust solution might involve udev or lsblk.
+// For v1, we'll monitor common patterns like sdX, hdX, vdX, nvmeXnY, xvdX and their partitions.
+// We should exclude loop, ram, rom devices.
+func isRelevantDevice(deviceName string) bool <span class="cov8" title="1">{
+        // Exclude loop devices, ram disks, cd/dvd roms
+        if strings.HasPrefix(deviceName, "loop") ||
+                strings.HasPrefix(deviceName, "ram") ||
+                strings.HasPrefix(deviceName, "sr") || // SCSI ROM
+                strings.HasPrefix(deviceName, "fd") </span><span class="cov0" title="0">{ // Floppy disk
+                return false
+        }</span>
+        // Include common disk types
+        // sd[a-z], hd[a-z], vd[a-z], xvd[a-z], nvme[0-9]n[0-9]
+        // and their partitions (e.g. sda1)
+        // A simple check: if it doesn't start with the exclusion list and contains some typical disk letters.
+        // This could be refined. For now, any device not explicitly excluded is considered.
+        // For a VPS, we usually only have one or two main virtual disks (e.g., vda, sda).
+        <span class="cov8" title="1">return true</span> // A more sophisticated filter can be added if needed
+}
+
+
+// GetDiskStats reads /proc/diskstats and aggregates read/write bytes across relevant devices.
+func GetDiskStats() (*DiskStats, error) <span class="cov8" title="1">{
+        file, err := os.Open("/proc/diskstats")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open /proc/diskstats: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer file.Close()
+
+        stats := &amp;DiskStats{}
+        scanner := bufio.NewScanner(file)
+
+        for scanner.Scan() </span><span class="cov8" title="1">{
+                fields := strings.Fields(scanner.Text())
+                if len(fields) &lt; 10 </span><span class="cov0" title="0">{ // Need at least up to sectors written
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">deviceName := fields[2]
+                if !isRelevantDevice(deviceName) </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                // Field 5: sectors read
+                <span class="cov8" title="1">sectorsRead, err := strconv.ParseUint(fields[5], 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        // log.Printf("Warning: could not parse sectors_read for %s: %v", deviceName, err)
+                        continue</span>
+                }
+                // Field 9: sectors written
+                <span class="cov8" title="1">sectorsWritten, err := strconv.ParseUint(fields[9], 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        // log.Printf("Warning: could not parse sectors_written for %s: %v", deviceName, err)
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">stats.TotalSectorsRead += sectorsRead
+                stats.TotalSectorsWritten += sectorsWritten</span>
+        }
+
+        <span class="cov8" title="1">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error scanning /proc/diskstats: %w", err)
+        }</span>
+        <span class="cov8" title="1">return stats, nil</span>
+}
+
+// CalculateDiskIORates computes read/write bytes per second.
+func CalculateDiskIORates(prev, curr DiskStats, elapsedSeconds float64) (readBytesPs, writeBytesPs float64) <span class="cov8" title="1">{
+        if elapsedSeconds &lt;= 0 </span><span class="cov0" title="0">{
+                return 0, 0
+        }</span>
+
+        <span class="cov8" title="1">deltaSectorsRead := curr.TotalSectorsRead - prev.TotalSectorsRead
+        deltaSectorsWritten := curr.TotalSectorsWritten - prev.TotalSectorsWritten
+
+    // Handle counter wrap-around (unsigned integers) - less likely for disk stats over short periods
+    if curr.TotalSectorsRead &lt; prev.TotalSectorsRead </span><span class="cov0" title="0">{ // wrapped
+        deltaSectorsRead = curr.TotalSectorsRead // treat as if started from 0
+    }</span>
+    <span class="cov8" title="1">if curr.TotalSectorsWritten &lt; prev.TotalSectorsWritten </span><span class="cov0" title="0">{ // wrapped
+        deltaSectorsWritten = curr.TotalSectorsWritten
+    }</span>
+
+
+        <span class="cov8" title="1">readBps := float64(deltaSectorsRead*sectorSize) / elapsedSeconds
+        writeBps := float64(deltaSectorsWritten*sectorSize) / elapsedSeconds
+
+        return readBps, writeBps</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package collector
+
+import (
+        "bufio"
+        "fmt"
+        "os"
+        "strconv"
+        "strings"
+)
+
+// MemInfo represents data parsed from /proc/meminfo
+type MemInfo struct {
+        MemTotal     uint64 // kB
+        MemFree      uint64 // kB
+        MemAvailable uint64 // kB (More useful than MemFree)
+        Buffers      uint64 // kB
+        Cached       uint64 // kB
+        SwapTotal    uint64 // kB
+        SwapFree     uint64 // kB
+}
+
+func parseMemInfo() (*MemInfo, error) <span class="cov8" title="1">{
+        file, err := os.Open("/proc/meminfo")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open /proc/meminfo: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer file.Close()
+
+        info := &amp;MemInfo{}
+        scanner := bufio.NewScanner(file)
+        requiredFields := map[string]*uint64{
+                "MemTotal:":     &amp;info.MemTotal,
+                "MemFree:":      &amp;info.MemFree,
+                "MemAvailable:": &amp;info.MemAvailable,
+                "Buffers:":      &amp;info.Buffers,
+                "Cached:":       &amp;info.Cached,
+                "SwapTotal:":    &amp;info.SwapTotal,
+                "SwapFree:":     &amp;info.SwapFree,
+        }
+        foundCount := 0
+
+        for scanner.Scan() </span><span class="cov8" title="1">{
+                line := scanner.Text()
+                parts := strings.Fields(line)
+                if len(parts) &lt; 2 </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">fieldName := parts[0]
+                if ptr, ok := requiredFields[fieldName]; ok </span><span class="cov8" title="1">{
+                        val, err := strconv.ParseUint(parts[1], 10, 64)
+                        if err == nil </span><span class="cov8" title="1">{
+                                *ptr = val
+                                foundCount++
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error scanning /proc/meminfo: %w", err)
+        }</span>
+        <span class="cov8" title="1">if foundCount &lt; len(requiredFields) </span><span class="cov0" title="0">{
+                // If MemAvailable is missing (older kernels), we might try to calculate it
+                if info.MemAvailable == 0 &amp;&amp; info.MemTotal &gt; 0 </span>{<span class="cov0" title="0">
+                        // This is a rough estimate, modern kernels provide MemAvailable directly
+                        // For simplicity, we'll rely on MemAvailable being present.
+                        // If not, mem_percent_used calculation would be less accurate.
+                }</span>
+                // Log a warning or error if not all fields are found, but proceed if essential ones are.
+        }
+
+
+        <span class="cov8" title="1">return info, nil</span>
+}
+
+// CollectMemoryStats gathers memory and swap usage statistics.
+func CollectMemoryStats() (CollectedMetrics, error) <span class="cov8" title="1">{
+        memInfo, err := parseMemInfo()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">metrics := make(CollectedMetrics)
+
+        // Memory
+        if memInfo.MemTotal &gt; 0 </span><span class="cov8" title="1">{
+                var usedMemPercentage float64
+                if memInfo.MemAvailable &gt; 0 </span><span class="cov8" title="1">{ // Prefer MemAvailable for 'used' calculation
+                        usedMemPercentage = (1.0 - float64(memInfo.MemAvailable)/float64(memInfo.MemTotal)) * 100.0
+                }</span> else<span class="cov0" title="0"> { // Fallback if MemAvailable is not present (older kernels)
+                        // Used = Total - Free - Buffers - Cached (This is a common interpretation)
+                        // However, Buffers and Cached are reclaimable. Using (Total - Free) is too simplistic.
+                        // (Total - Free - (Buffers + Cached)) is one way, but MemAvailable is better.
+                        // For simplicity, if MemAvailable is 0, we use Total - Free.
+                        usedMemPercentage = (1.0 - float64(memInfo.MemFree)/float64(memInfo.MemTotal)) * 100.0
+                }</span>
+                <span class="cov8" title="1">metrics["mem_percent_used"] = usedMemPercentage
+                metrics["mem_percent_free"] = (float64(memInfo.MemAvailable)/float64(memInfo.MemTotal)) * 100.0</span> // Based on MemAvailable
+        } else<span class="cov0" title="0"> {
+                metrics["mem_percent_used"] = 0
+                metrics["mem_percent_free"] = 0
+        }</span>
+
+        // Swap
+        <span class="cov8" title="1">if memInfo.SwapTotal &gt; 0 </span><span class="cov8" title="1">{
+                swapUsed := memInfo.SwapTotal - memInfo.SwapFree
+                metrics["swap_percent_used"] = (float64(swapUsed) / float64(memInfo.SwapTotal)) * 100.0
+                metrics["swap_percent_free"] = (float64(memInfo.SwapFree) / float64(memInfo.SwapTotal)) * 100.0
+        }</span> else<span class="cov0" title="0"> {
+                metrics["swap_percent_used"] = 0
+                metrics["swap_percent_free"] = 0
+        }</span>
+
+        <span class="cov8" title="1">return metrics, nil</span>
+}
+
+
+func NewMemoryCollector() MetricCollector <span class="cov8" title="1">{
+        return &amp;memoryCollectorAdaptor{}
+}</span>
+type memoryCollectorAdaptor struct{}
+func (mca *memoryCollectorAdaptor) Collect() (CollectedMetrics, error) <span class="cov8" title="1">{ return CollectMemoryStats() }</span>
+func (mca *memoryCollectorAdaptor) Name() string                       <span class="cov8" title="1">{ return "memory" }</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package collector
+
+import (
+        "bufio"
+        "fmt"
+        "os"
+        "strconv"
+        "strings"
+)
+
+// NetworkStats holds aggregated network I/O counters from /proc/net/dev.
+type NetworkStats struct {
+        TotalRecvBytes uint64
+        TotalSentBytes uint64
+}
+
+// isRelevantInterface checks if the interface from /proc/net/dev is one we want to monitor.
+// Typically, exclude 'lo' (loopback). For a VPS, 'eth0', 'ensX', etc., are common.
+func isRelevantInterface(ifaceName string) bool <span class="cov8" title="1">{
+        return ifaceName != "lo"
+}</span>
+
+// GetNetworkStats reads /proc/net/dev and aggregates received/transmitted bytes.
+func GetNetworkStats() (*NetworkStats, error) <span class="cov8" title="1">{
+        file, err := os.Open("/proc/net/dev")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to open /proc/net/dev: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer file.Close()
+
+        stats := &amp;NetworkStats{}
+        scanner := bufio.NewScanner(file)
+
+        // Skip header lines
+        for i := 0; i &lt; 2; i++ </span><span class="cov8" title="1">{
+                if !scanner.Scan() </span><span class="cov0" title="0">{
+                        if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("error reading header from /proc/net/dev: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">return nil, fmt.Errorf("unexpected EOF reading /proc/net/dev header")</span>
+                }
+        }
+
+        <span class="cov8" title="1">for scanner.Scan() </span><span class="cov8" title="1">{
+                line := scanner.Text()
+                fields := strings.Fields(strings.ReplaceAll(line, ":", " ")) // Replace colon for easier field split
+                if len(fields) &lt; 10 </span><span class="cov0" title="0">{ // Interface name, RecvBytes, RecvPackets, ..., SentBytes, SentPackets, ...
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">ifaceName := fields[0]
+                if !isRelevantInterface(ifaceName) </span><span class="cov8" title="1">{
+                        continue</span>
+                }
+
+                // Received bytes is the 1st field after name (index 1 if name is 0)
+                <span class="cov8" title="1">recvBytes, err := strconv.ParseUint(fields[1], 10, 64)
+                if err != nil </span><span class="cov0" title="0">{
+                        // log.Printf("Warning: could not parse recv_bytes for %s: %v", ifaceName, err)
+                        continue</span>
+                }
+                // Transmitted bytes is the 8th field after name (index 9 if name is 0, but after split it's index 8 after name)
+                // fields: face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+                //         0     1        2       3    4    5    6     7          8         9       10
+                // After splitting by space and ':', fields are:
+                // &lt;iface_name&gt; &lt;recv_bytes&gt; &lt;recv_packets&gt; ... &lt;sent_bytes&gt; ...
+                // So, if fields[0] is iface_name, fields[1] is recv_bytes, fields[9] is sent_bytes
+                <span class="cov8" title="1">sentBytes, err := strconv.ParseUint(fields[9], 10, 64) // Index 9 after splitting with multiple spaces
+                if err != nil </span><span class="cov0" title="0">{
+                        // log.Printf("Warning: could not parse sent_bytes for %s: %v", ifaceName, err)
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">stats.TotalRecvBytes += recvBytes
+                stats.TotalSentBytes += sentBytes</span>
+        }
+
+        <span class="cov8" title="1">if err := scanner.Err(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("error scanning /proc/net/dev: %w", err)
+        }</span>
+        <span class="cov8" title="1">return stats, nil</span>
+}
+
+// CalculateNetworkIORates computes received/sent bytes per second.
+func CalculateNetworkIORates(prev, curr NetworkStats, elapsedSeconds float64) (recvBytesPs, sentBytesPs float64) <span class="cov8" title="1">{
+        if elapsedSeconds &lt;= 0 </span><span class="cov0" title="0">{
+                return 0, 0
+        }</span>
+
+        <span class="cov8" title="1">deltaRecvBytes := curr.TotalRecvBytes - prev.TotalRecvBytes
+        deltaSentBytes := curr.TotalSentBytes - prev.TotalSentBytes
+
+    // Handle counter wrap-around (unsigned integers)
+    if curr.TotalRecvBytes &lt; prev.TotalRecvBytes </span><span class="cov0" title="0">{ // wrapped
+        deltaRecvBytes = curr.TotalRecvBytes // treat as if started from 0 for this period, or use math.MaxUint64 - prev + curr
+    }</span>
+     <span class="cov8" title="1">if curr.TotalSentBytes &lt; prev.TotalSentBytes </span><span class="cov0" title="0">{ // wrapped
+        deltaSentBytes = curr.TotalSentBytes
+    }</span>
+
+
+        <span class="cov8" title="1">recvBps := float64(deltaRecvBytes) / elapsedSeconds
+        sentBps := float64(deltaSentBytes) / elapsedSeconds
+
+        return recvBps, sentBps</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package config
+
+import (
+        "fmt"
+        "os"
+        "strings"
+        "time"
+
+        "github.com/mattmezza/monres/internal/util" // Corrected import path
+        "gopkg.in/yaml.v3"
+)
+
+type Config struct {
+        IntervalSeconds    int                    `yaml:"interval_seconds"`
+        HostnameOverride   string                 `yaml:"hostname"` // Field for Hostname
+        Alerts             []AlertRuleConfig      `yaml:"alerts"`
+        NotificationChannels []NotificationChannelConfig `yaml:"notification_channels"`
+        Templates          TemplateConfig         `yaml:"templates"`
+        CollectionInterval time.Duration          `yaml:"-"` // Derived
+        EffectiveHostname  string                 `yaml:"-"` // Derived
+}
+
+type AlertRuleConfig struct {
+        Name        string   `yaml:"name"`
+        Metric      string   `yaml:"metric"`
+        Condition   string   `yaml:"condition"`
+        Threshold   float64  `yaml:"threshold"`
+        DurationStr string   `yaml:"duration"` // e.g., "5m", "300s"
+        Aggregation string   `yaml:"aggregation"` // "average", "max"
+        Channels    []string `yaml:"channels"`
+        Duration    time.Duration `yaml:"-"` // Parsed
+}
+
+type NotificationChannelConfig struct {
+        Name   string                 `yaml:"name"`
+        Type   string                 `yaml:"type"` // "email", "telegram"
+        Config map[string]interface{} `yaml:"config"`
+}
+
+type EmailChannelConfig struct {
+        SMTPHost     string   `yaml:"smtp_host"`
+        SMTPPort     int      `yaml:"smtp_port"`
+        SMTPUsername string   `yaml:"smtp_username"`
+        SMTPPassword string   `yaml:"smtp_password"` // Will be populated from ENV
+        SMTPFrom     string   `yaml:"smtp_from"`
+        SMTPTo       []string `yaml:"smtp_to"`
+        SMTPUseTLS   bool     `yaml:"smtp_use_tls"`
+}
+
+type TelegramChannelConfig struct {
+        BotToken string `yaml:"bot_token"` // Will be populated from ENV
+        ChatID   string `yaml:"chat_id"`
+}
+
+type TemplateConfig struct {
+        AlertFired    string `yaml:"alert_fired"`
+        AlertResolved string `yaml:"alert_resolved"`
+}
+
+func LoadConfig(filePath string) (*Config, error) <span class="cov8" title="1">{
+        data, err := os.ReadFile(filePath)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to read config file %s: %w", filePath, err)
+        }</span>
+
+        <span class="cov8" title="1">var cfg Config
+        err = yaml.Unmarshal(data, &amp;cfg)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("failed to unmarshal config YAML from %s: %w", filePath, err)
+        }</span>
+
+        // Validate and derive values
+        <span class="cov8" title="1">if cfg.IntervalSeconds &lt;= 0 </span><span class="cov8" title="1">{
+                cfg.IntervalSeconds = 30 // Default
+        }</span>
+        <span class="cov8" title="1">cfg.CollectionInterval = time.Duration(cfg.IntervalSeconds) * time.Second
+
+        if strings.TrimSpace(cfg.HostnameOverride) != "" </span><span class="cov8" title="1">{
+                cfg.EffectiveHostname = cfg.HostnameOverride
+        }</span> else<span class="cov8" title="1"> {
+                hostname, err := os.Hostname()
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to get OS hostname: %w", err)
+                }</span>
+                <span class="cov8" title="1">cfg.EffectiveHostname = hostname</span>
+        }
+
+
+        <span class="cov8" title="1">for i := range cfg.Alerts </span><span class="cov8" title="1">{
+                rule := &amp;cfg.Alerts[i]
+                if rule.Name == "" </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("alert rule at index %d missing name", i)
+                }</span>
+                <span class="cov8" title="1">if rule.Metric == "" </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("alert rule '%s' missing metric", rule.Name)
+                }</span>
+                // Validate condition, aggregation, etc.
+                <span class="cov8" title="1">switch strings.ToLower(rule.Aggregation) </span>{
+                case "average", "max", "":<span class="cov8" title="1"></span>
+                        // OK
+                default:<span class="cov8" title="1">
+                        return nil, fmt.Errorf("alert rule '%s' has invalid aggregation '%s'", rule.Name, rule.Aggregation)</span>
+                }
+                <span class="cov8" title="1">if rule.DurationStr != "" </span><span class="cov8" title="1">{
+                        rule.Duration, err = util.ParseDurationString(rule.DurationStr)
+                        if err != nil </span><span class="cov8" title="1">{
+                                return nil, fmt.Errorf("alert rule '%s' has invalid duration: %w", rule.Name, err)
+                        }</span>
+                }
+                <span class="cov8" title="1">if len(rule.Channels) == 0 </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("alert rule '%s' has no notification channels defined", rule.Name)
+                }</span>
+        }
+
+        <span class="cov8" title="1">for i := range cfg.NotificationChannels </span><span class="cov8" title="1">{
+                nc := &amp;cfg.NotificationChannels[i]
+                if nc.Name == "" </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("notification channel at index %d missing name", i)
+                }</span>
+                // Load sensitive data from ENV vars
+                // Naming convention: MONRES_&lt;SENSITIVE_FIELD_NAME&gt;_&lt;CHANNEL_NAME_UPPERCASE&gt;
+                // e.g., MONRES_SMTP_PASSWORD_CRITICAL_EMAIL
+                // e.g., MONRES_TELEGRAM_TOKEN_OPS_TELEGRAM
+                <span class="cov8" title="1">envVarPrefix := "MONRES_"
+                channelNameUpper := strings.ToUpper(strings.ReplaceAll(nc.Name, "-", "_"))
+
+                switch nc.Type </span>{
+                case "email":<span class="cov8" title="1">
+                        passwordEnvKey := fmt.Sprintf("%sSMTP_PASSWORD_%s", envVarPrefix, channelNameUpper)
+                        if pass := os.Getenv(passwordEnvKey); pass != "" </span><span class="cov8" title="1">{
+                                if nc.Config == nil </span><span class="cov0" title="0">{ nc.Config = make(map[string]interface{})}</span>
+                                <span class="cov8" title="1">nc.Config["smtp_password"] = pass</span>
+                        } else<span class="cov0" title="0"> {
+                                // Check if password was in config (it shouldn't be)
+                                if _, ok := nc.Config["smtp_password"]; ok &amp;&amp; nc.Config["smtp_password"] != "" </span><span class="cov0" title="0">{
+                                        // Log warning, but it will be ignored in favor of ENV var (which is empty here)
+                                        fmt.Printf("Warning: SMTP password for channel '%s' found in config file. It should be set via ENV var %s.\n", nc.Name, passwordEnvKey)
+                                }</span>
+                                // If not in ENV and critical, could be an error or handled by notifier init
+                        }
+                case "telegram":<span class="cov8" title="1">
+                        tokenEnvKey := fmt.Sprintf("%sTELEGRAM_TOKEN_%s", envVarPrefix, channelNameUpper)
+                        if token := os.Getenv(tokenEnvKey); token != "" </span><span class="cov8" title="1">{
+                                if nc.Config == nil </span><span class="cov0" title="0">{ nc.Config = make(map[string]interface{})}</span>
+                                <span class="cov8" title="1">nc.Config["bot_token"] = token</span>
+                        } else<span class="cov0" title="0"> {
+                                if _, ok := nc.Config["bot_token"]; ok &amp;&amp; nc.Config["bot_token"] != "" </span><span class="cov0" title="0">{
+                                        fmt.Printf("Warning: Telegram bot token for channel '%s' found in config file. It should be set via ENV var %s.\n", nc.Name, tokenEnvKey)
+                                }</span>
+                        }
+                case "stdout":<span class="cov0" title="0"></span>
+                        // No sensitive data, just a simple channel
+                default:<span class="cov0" title="0">
+                        return nil, fmt.Errorf("notification channel '%s' has unknown type '%s'", nc.Name, nc.Type)</span>
+                }
+        }
+
+        // Default templates
+        <span class="cov8" title="1">if cfg.Templates.AlertFired == "" </span><span class="cov8" title="1">{
+                cfg.Templates.AlertFired = `ALERT FIRED: {{.AlertName}} on {{.Hostname}}. Metric: {{.MetricName}} {{.Condition}} {{.ThresholdValue}} (Current: {{printf "%.2f" .MetricValue}}). Time: {{.Time.Format "2006-01-02 15:04:05"}}`
+        }</span>
+        <span class="cov8" title="1">if cfg.Templates.AlertResolved == "" </span><span class="cov8" title="1">{
+                cfg.Templates.AlertResolved = `ALERT RESOLVED: {{.AlertName}} on {{.Hostname}}. Time: {{.Time.Format "2006-01-02 15:04:05"}}`
+        }</span>
+
+        <span class="cov8" title="1">return &amp;cfg, nil</span>
+}
+
+// Helper to get typed Email config
+func GetEmailChannelConfig(nc NotificationChannelConfig) (*EmailChannelConfig, error) <span class="cov8" title="1">{
+        if nc.Type != "email" </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("not an email channel")
+        }</span>
+        <span class="cov8" title="1">var emailCfg EmailChannelConfig
+        // Simple conversion assuming map keys match struct fields (after lowercasing/snake_case)
+        // A more robust way is to use a library like mapstructure if complex
+        if host, ok := nc.Config["smtp_host"].(string); ok </span><span class="cov8" title="1">{ emailCfg.SMTPHost = host }</span> else<span class="cov8" title="1"> { return nil, fmt.Errorf("channel '%s': smtp_host missing or not a string", nc.Name)}</span>
+        <span class="cov8" title="1">if port, ok := nc.Config["smtp_port"].(int); ok </span><span class="cov8" title="1">{ emailCfg.SMTPPort = port }</span> else<span class="cov8" title="1"> { return nil, fmt.Errorf("channel '%s': smtp_port missing or not an int", nc.Name)}</span>
+        <span class="cov8" title="1">if user, ok := nc.Config["smtp_username"].(string); ok </span><span class="cov8" title="1">{ emailCfg.SMTPUsername = user }</span>
+        <span class="cov8" title="1">if pass, ok := nc.Config["smtp_password"].(string); ok </span><span class="cov8" title="1">{ emailCfg.SMTPPassword = pass }</span> // Already from ENV
+        <span class="cov8" title="1">if from, ok := nc.Config["smtp_from"].(string); ok </span><span class="cov8" title="1">{ emailCfg.SMTPFrom = from }</span> else<span class="cov0" title="0"> { return nil, fmt.Errorf("channel '%s': smtp_from missing or not a string", nc.Name)}</span>
+        <span class="cov8" title="1">if toVal, ok := nc.Config["smtp_to"].([]interface{}); ok </span><span class="cov8" title="1">{
+                for _, t := range toVal </span><span class="cov8" title="1">{
+                        if tStr, ok := t.(string); ok </span><span class="cov8" title="1">{
+                                emailCfg.SMTPTo = append(emailCfg.SMTPTo, tStr)
+                        }</span>
+                }
+        } else<span class="cov0" title="0"> { return nil, fmt.Errorf("channel '%s': smtp_to missing or not a list of strings", nc.Name)}</span>
+        <span class="cov8" title="1">if useTLS, ok := nc.Config["smtp_use_tls"].(bool); ok </span><span class="cov8" title="1">{ emailCfg.SMTPUseTLS = useTLS}</span>
+
+        <span class="cov8" title="1">if emailCfg.SMTPHost == "" || emailCfg.SMTPPort == 0 || emailCfg.SMTPFrom == "" || len(emailCfg.SMTPTo) == 0 </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("channel '%s': one or more required email config fields are missing (host, port, from, to)", nc.Name)
+        }</span>
+        // Username/Password can be optional for some SMTP servers
+        <span class="cov8" title="1">return &amp;emailCfg, nil</span>
+}
+
+// Helper to get typed Telegram config
+func GetTelegramChannelConfig(nc NotificationChannelConfig) (*TelegramChannelConfig, error) <span class="cov8" title="1">{
+        if nc.Type != "telegram" </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("not a telegram channel")
+        }</span>
+        <span class="cov8" title="1">var telegramCfg TelegramChannelConfig
+        if token, ok := nc.Config["bot_token"].(string); ok </span><span class="cov8" title="1">{ telegramCfg.BotToken = token }</span> // Already from ENV
+        <span class="cov8" title="1">if chatID, ok := nc.Config["chat_id"].(string); ok </span><span class="cov8" title="1">{ telegramCfg.ChatID = chatID }</span> else<span class="cov8" title="1"> { return nil, fmt.Errorf("channel '%s': chat_id missing or not a string", nc.Name) }</span>
+
+        <span class="cov8" title="1">if telegramCfg.BotToken == "" || telegramCfg.ChatID == "" </span><span class="cov8" title="1">{
+                 return nil, fmt.Errorf("channel '%s': bot_token (from ENV) or chat_id are missing", nc.Name)
+        }</span>
+        <span class="cov8" title="1">return &amp;telegramCfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package history
+
+import (
+        "sync"
+        "time"
+
+        "github.com/mattmezza/monres/internal/config"
+)
+
+type DataPoint struct {
+        Timestamp time.Time
+        Value     float64
+}
+
+type MetricHistoryBuffer struct {
+        sync.RWMutex
+        buffers       map[string][]DataPoint // metricName -&gt; []DataPoint
+        maxDataPoints int                    // Max data points to keep per metric
+}
+
+func NewMetricHistoryBuffer(maxAge time.Duration, collectionInterval time.Duration) *MetricHistoryBuffer <span class="cov8" title="1">{
+        if maxAge &lt;= 0 || collectionInterval &lt;= 0 </span><span class="cov8" title="1">{ // Should not happen with config validation
+                maxDataPoints := 60 // Default to 60 points if params are weird.
+                return &amp;MetricHistoryBuffer{
+                        buffers:       make(map[string][]DataPoint),
+                        maxDataPoints: maxDataPoints,
+                }
+        }</span>
+        <span class="cov8" title="1">maxDataPoints := int(maxAge.Seconds()/collectionInterval.Seconds()) + 1 // +1 for safety
+        if maxDataPoints &lt; 2 </span><span class="cov8" title="1">{ // Need at least 2 points for some calcs or reasonable history
+                maxDataPoints = 2
+        }</span>
+
+        <span class="cov8" title="1">return &amp;MetricHistoryBuffer{
+                buffers:       make(map[string][]DataPoint),
+                maxDataPoints: maxDataPoints,
+        }</span>
+}
+
+// AddDataPoint adds a new data point for a metric.
+// It evicts the oldest point if the buffer for that metric exceeds maxDataPoints.
+func (hb *MetricHistoryBuffer) AddDataPoint(metricName string, value float64, timestamp time.Time) <span class="cov8" title="1">{
+        hb.Lock()
+        defer hb.Unlock()
+
+        points, exists := hb.buffers[metricName]
+        if !exists </span><span class="cov8" title="1">{
+                points = make([]DataPoint, 0, hb.maxDataPoints)
+        }</span>
+
+        <span class="cov8" title="1">points = append(points, DataPoint{Timestamp: timestamp, Value: value})
+
+        if len(points) &gt; hb.maxDataPoints </span><span class="cov8" title="1">{
+                points = points[len(points)-hb.maxDataPoints:] // Keep the newest N points
+        }</span>
+        <span class="cov8" title="1">hb.buffers[metricName] = points</span>
+}
+
+// GetDataPointsForDuration retrieves data points for a specific metric within the given duration.
+// It returns points whose Timestamp is within [now - duration, now].
+func (hb *MetricHistoryBuffer) GetDataPointsForDuration(metricName string, duration time.Duration, now time.Time) []DataPoint <span class="cov8" title="1">{
+        hb.RLock()
+        defer hb.RUnlock()
+
+        points, exists := hb.buffers[metricName]
+        if !exists || len(points) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if duration == 0 </span><span class="cov8" title="1">{ // If duration is 0, return only the latest point
+                if len(points) &gt; 0 </span><span class="cov8" title="1">{
+                        return []DataPoint{points[len(points)-1]}
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+}
+
+        <span class="cov8" title="1">startTime := now.Add(-(duration + 1 * time.Second)) // -1s to ensure we get points within the duration
+        var result []DataPoint
+        for i := len(points) - 1; i &gt;= 0; i-- </span><span class="cov8" title="1">{ // Iterate backwards for efficiency
+                dp := points[i]
+                if dp.Timestamp.Before(startTime) </span><span class="cov8" title="1">{
+                        break</span> // Older points are not needed
+                }
+                <span class="cov8" title="1">result = append(result, dp)</span> // Will be in reverse chronological order
+        }
+    // Reverse result to be chronological
+    <span class="cov8" title="1">for i, j := 0, len(result)-1; i &lt; j; i, j = i+1, j-1 </span><span class="cov8" title="1">{
+        result[i], result[j] = result[j], result[i]
+    }</span>
+        <span class="cov8" title="1">return result</span>
+}
+
+// GetLatestDataPoint returns the most recent data point for a metric, if any.
+func (hb *MetricHistoryBuffer) GetLatestDataPoint(metricName string) (DataPoint, bool) <span class="cov8" title="1">{
+        hb.RLock()
+        defer hb.RUnlock()
+
+        points, exists := hb.buffers[metricName]
+        if !exists || len(points) == 0 </span><span class="cov8" title="1">{
+                return DataPoint{}, false
+        }</span>
+        <span class="cov8" title="1">return points[len(points)-1], true</span>
+}
+
+// GetMaxConfiguredDuration determines the maximum duration from all alert rules
+// This is used by the main app to initialize the history buffer appropriately.
+func GetMaxConfiguredDuration(rules []config.AlertRuleConfig, collectionInterval time.Duration) time.Duration <span class="cov0" title="0">{
+        var maxDuration time.Duration
+        minRequiredDurationForBuffer := 2 * collectionInterval // Ensure buffer can hold at least 2 points
+
+        for _, rule := range rules </span><span class="cov0" title="0">{
+                if rule.Duration &gt; maxDuration </span><span class="cov0" title="0">{
+                        maxDuration = rule.Duration
+                }</span>
+        }
+    <span class="cov0" title="0">if maxDuration &lt; minRequiredDurationForBuffer </span><span class="cov0" title="0">{
+        return minRequiredDurationForBuffer
+    }</span>
+        <span class="cov0" title="0">return maxDuration</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package notifier
+
+import (
+        "crypto/tls"
+        "fmt"
+        "net/smtp"
+        "strings"
+
+        "github.com/mattmezza/monres/internal/config"
+)
+
+type EmailNotifier struct {
+        name   string
+        config config.EmailChannelConfig
+}
+
+func NewEmailNotifier(name string, cfg config.EmailChannelConfig) (*EmailNotifier, error) <span class="cov8" title="1">{
+        if cfg.SMTPHost == "" || cfg.SMTPPort == 0 || cfg.SMTPFrom == "" || len(cfg.SMTPTo) == 0 </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("email notifier '%s' is missing required configuration (host, port, from, to)", name)
+        }</span>
+        // Password check is tricky: it might be optional for some non-auth SMTP relays.
+        // If username is present, password should ideally be present.
+        <span class="cov8" title="1">if cfg.SMTPUsername != "" &amp;&amp; cfg.SMTPPassword == "" </span>{<span class="cov0" title="0">
+                // This indicates RESMON_SMTP_PASSWORD_xyz was not set.
+                // Depending on strictness, this could be an error. For now, allow it and let SMTP server reject.
+                // log.Printf("Warning: Email notifier '%s' has a username but no password. SMTP auth might fail.", name)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;EmailNotifier{name: name, config: cfg}, nil</span>
+}
+
+func (en *EmailNotifier) Name() string <span class="cov8" title="1">{
+        return en.name
+}</span>
+
+func (en *EmailNotifier) Send(data NotificationData, templates NotificationTemplates) error <span class="cov0" title="0">{
+        var subject, body string
+        var err error
+
+        templateToUse := templates.FiredTemplate
+        subjectPrefix := "ALERT FIRED"
+        if data.State == "RESOLVED" </span><span class="cov0" title="0">{
+                templateToUse = templates.ResolvedTemplate
+                subjectPrefix = "ALERT RESOLVED"
+        }</span>
+
+        <span class="cov0" title="0">subject = fmt.Sprintf("%s: %s on %s", subjectPrefix, data.AlertName, data.Hostname)
+        body, err = renderTemplate("email_body", templateToUse, data)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to render email template for alert '%s': %w", data.AlertName, err)
+        }</span>
+
+        // Construct message
+        // MIME headers are important for many email clients
+        <span class="cov0" title="0">toList := strings.Join(en.config.SMTPTo, ",")
+        msg := []byte(fmt.Sprintf("To: %s\r\n"+
+                "From: %s\r\n"+
+                "Subject: %s\r\n"+
+                "Content-Type: text/plain; charset=UTF-8\r\n"+
+                "\r\n"+
+                "%s\r\n", toList, en.config.SMTPFrom, subject, body))
+
+        addr := fmt.Sprintf("%s:%d", en.config.SMTPHost, en.config.SMTPPort)
+        var auth smtp.Auth
+        if en.config.SMTPUsername != "" </span><span class="cov0" title="0">{
+                auth = smtp.PlainAuth("", en.config.SMTPUsername, en.config.SMTPPassword, en.config.SMTPHost)
+        }</span>
+
+        <span class="cov0" title="0">if en.config.SMTPUseTLS </span><span class="cov0" title="0">{ // STARTTLS
+                // Connect to the server, tell it we want to use TLS, and then switch to TLS.
+                client, err := smtp.Dial(addr)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to dial SMTP server (pre-TLS): %w", err)
+                }</span>
+                <span class="cov0" title="0">defer client.Close()
+
+                if ok, _ := client.Extension("STARTTLS"); ok </span><span class="cov0" title="0">{
+                        tlsConfig := &amp;tls.Config{
+                                ServerName: en.config.SMTPHost,
+                                // InsecureSkipVerify: true, // Not recommended for production
+                        }
+                        if err = client.StartTLS(tlsConfig); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to start TLS with SMTP server: %w", err)
+                        }</span>
+                } else<span class="cov0" title="0"> {
+                        // Server does not support STARTTLS, but config said to use it.
+                        // Or, if port is 465 (SMTPS), direct TLS connection is needed, not STARTTLS.
+                        // This simple client does not handle direct SMTPS on 465 well.
+                        // For port 465, a different approach is needed: tls.Dial then smtp.NewClient
+                        if en.config.SMTPPort == 465 </span><span class="cov0" title="0">{ // SMTPS often on 465
+                 return fmt.Errorf("STARTTLS configured, but port 465 suggests direct SSL/TLS. This client uses STARTTLS for smtp_use_tls=true. For port 465, explicit SSL/TLS connection is needed (not implemented in this basic SMTP sender).")
+            }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("SMTP server does not support STARTTLS, but smtp_use_tls was true")</span>
+                }
+
+                // Authenticate if credentials are provided
+                <span class="cov0" title="0">if auth != nil </span><span class="cov0" title="0">{
+                        if err = client.Auth(auth); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("SMTP authentication failed: %w", err)
+                        }</span>
+                }
+                // Send email
+                <span class="cov0" title="0">if err = client.Mail(extractEmail(en.config.SMTPFrom)); err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("SMTP MAIL FROM failed: %w", err)
+                }</span>
+                <span class="cov0" title="0">for _, rcpt := range en.config.SMTPTo </span><span class="cov0" title="0">{
+                        if err = client.Rcpt(extractEmail(rcpt)); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("SMTP RCPT TO failed for %s: %w", rcpt, err)
+                        }</span>
+                }
+                <span class="cov0" title="0">w, err := client.Data()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("SMTP DATA command failed: %w", err)
+                }</span>
+                <span class="cov0" title="0">_, err = w.Write(msg)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to write email body: %w", err)
+                }</span>
+                <span class="cov0" title="0">err = w.Close()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to close email data writer: %w", err)
+                }</span>
+                <span class="cov0" title="0">return client.Quit()</span>
+
+        } else<span class="cov0" title="0"> { // Plain SMTP
+                err = smtp.SendMail(addr, auth, en.config.SMTPFrom, en.config.SMTPTo, msg)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to send email via plain SMTP: %w", err)
+                }</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// extractEmail parses "Display Name &lt;email@example.com&gt;" and returns "email@example.com"
+func extractEmail(fullEmail string) string <span class="cov0" title="0">{
+        if strings.Contains(fullEmail, "&lt;") &amp;&amp; strings.Contains(fullEmail, "&gt;") </span><span class="cov0" title="0">{
+                start := strings.LastIndex(fullEmail, "&lt;")
+                end := strings.LastIndex(fullEmail, "&gt;")
+                if start != -1 &amp;&amp; end != -1 &amp;&amp; end &gt; start </span><span class="cov0" title="0">{
+                        return fullEmail[start+1 : end]
+                }</span>
+        }
+        <span class="cov0" title="0">return fullEmail</span> // Assume it's already just the email address
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package notifier
+
+import (
+        "bytes"
+        "fmt"
+        gotexttemplate "text/template"
+        "time"
+        "log"
+
+        "github.com/mattmezza/monres/internal/config"
+)
+
+// NotificationData is the data passed to templates.
+type NotificationData struct {
+        AlertName      string
+        MetricName     string
+        MetricValue    float64
+        ThresholdValue float64
+        Condition      string
+        State          string // "FIRED" or "RESOLVED"
+        Hostname       string
+        Time           time.Time
+        DurationString string // e.g. "5m"
+        Aggregation    string // e.g. "average"
+}
+
+type NotificationTemplates struct {
+        FiredTemplate    string
+        ResolvedTemplate string
+}
+
+// Notifier is the interface for all notification channel types.
+type Notifier interface {
+        Send(data NotificationData, templates NotificationTemplates) error
+        Name() string // Returns the configured channel name
+}
+
+func renderTemplate(templateName string, templateStr string, data NotificationData) (string, error) <span class="cov8" title="1">{
+        // Using text/template as per requirements. If HTML emails were a primary concern, html/template would be safer.
+        tmpl, err := gotexttemplate.New(templateName).Parse(templateStr)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", fmt.Errorf("failed to parse notification template '%s': %w", templateName, err)
+        }</span>
+
+        <span class="cov8" title="1">var buf bytes.Buffer
+        err = tmpl.Execute(&amp;buf, data)
+        if err != nil </span><span class="cov8" title="1">{
+                return "", fmt.Errorf("failed to execute notification template '%s': %w", templateName, err)
+        }</span>
+        <span class="cov8" title="1">return buf.String(), nil</span>
+}
+
+
+func InitializeNotifiers(cfgNotifChannels []config.NotificationChannelConfig) (map[string]Notifier, error) <span class="cov8" title="1">{
+    notifiers := make(map[string]Notifier)
+    for _, ncCfg := range cfgNotifChannels </span><span class="cov8" title="1">{
+        var instance Notifier
+        var err error
+        switch ncCfg.Type </span>{
+        case "email":<span class="cov8" title="1">
+            emailCfg, convErr := config.GetEmailChannelConfig(ncCfg)
+            if convErr != nil </span><span class="cov0" title="0">{
+                 log.Printf("Skipping email channel '%s' due to config error: %v", ncCfg.Name, convErr)
+                 continue</span>
+            }
+            <span class="cov8" title="1">instance, err = NewEmailNotifier(ncCfg.Name, *emailCfg)</span>
+        case "telegram":<span class="cov8" title="1">
+            telegramCfg, convErr := config.GetTelegramChannelConfig(ncCfg)
+             if convErr != nil </span><span class="cov0" title="0">{
+                 log.Printf("Skipping telegram channel '%s' due to config error: %v", ncCfg.Name, convErr)
+                 continue</span>
+            }
+            <span class="cov8" title="1">instance, err = NewTelegramNotifier(ncCfg.Name, *telegramCfg)</span>
+                case "stdout":<span class="cov8" title="1">
+                        instance, err = NewStdoutNotifier(ncCfg.Name)</span>
+        default:<span class="cov8" title="1">
+            log.Printf("Unsupported notification channel type '%s' for channel '%s'. Skipping.", ncCfg.Type, ncCfg.Name)
+            continue</span>
+        }
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+            log.Printf("Failed to initialize notifier for channel '%s' (%s): %v. Skipping.", ncCfg.Name, ncCfg.Type, err)
+            continue</span>
+        }
+        <span class="cov8" title="1">if _, exists := notifiers[ncCfg.Name]; exists </span><span class="cov8" title="1">{
+            return nil, fmt.Errorf("duplicate notification channel name defined: %s", ncCfg.Name)
+        }</span>
+        <span class="cov8" title="1">notifiers[ncCfg.Name] = instance
+        log.Printf("Successfully initialized notifier for channel: %s (type: %s)", ncCfg.Name, ncCfg.Type)</span>
+    }
+    <span class="cov8" title="1">return notifiers, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package notifier
+
+import (
+        "fmt"
+)
+
+type StdoutNotifier struct {
+        name   string
+}
+
+func NewStdoutNotifier(name string) (*StdoutNotifier, error) <span class="cov8" title="1">{
+        return &amp;StdoutNotifier{
+                name:   name,
+        }, nil
+}</span>
+
+func (sout *StdoutNotifier) Name() string <span class="cov8" title="1">{
+        return sout.name
+}</span>
+
+func (sout *StdoutNotifier) Send(data NotificationData, templates NotificationTemplates) error <span class="cov8" title="1">{
+        var templateToUse string
+        if data.State == "RESOLVED" </span><span class="cov0" title="0">{
+                templateToUse = templates.ResolvedTemplate
+        }</span> else<span class="cov8" title="1"> {
+                templateToUse = templates.FiredTemplate
+        }</span>
+
+        // Render the template (which is plain text)
+        <span class="cov8" title="1">msg , err := renderTemplate("telegram_message", templateToUse, data)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to render Telegram template for alert '%s': %w", data.AlertName, err)
+        }</span>
+
+        // Print to Stdout
+        <span class="cov8" title="1">fmt.Printf("%s\n", msg)
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package notifier
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "net/http"
+        "strings"
+        "time"
+
+        "github.com/mattmezza/monres/internal/config"
+)
+
+type TelegramNotifier struct {
+        name   string
+        config config.TelegramChannelConfig
+        client *http.Client
+}
+
+func NewTelegramNotifier(name string, cfg config.TelegramChannelConfig) (*TelegramNotifier, error) <span class="cov8" title="1">{
+        if cfg.BotToken == "" || cfg.ChatID == "" </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("telegram notifier '%s' is missing bot_token (from ENV) or chat_id", name)
+        }</span>
+        <span class="cov8" title="1">return &amp;TelegramNotifier{
+                name:   name,
+                config: cfg,
+                client: &amp;http.Client{Timeout: 10 * time.Second},
+        }, nil</span>
+}
+
+func (tn *TelegramNotifier) Name() string <span class="cov8" title="1">{
+        return tn.name
+}</span>
+
+// Send sends a message to Telegram.
+// Telegram API prefers MarkdownV2 or HTML for formatting. Let's use MarkdownV2.
+// Note: text/template output needs to be escaped for MarkdownV2.
+func (tn *TelegramNotifier) Send(data NotificationData, templates NotificationTemplates) error <span class="cov8" title="1">{
+        var templateToUse string
+        if data.State == "RESOLVED" </span><span class="cov0" title="0">{
+                templateToUse = templates.ResolvedTemplate
+        }</span> else<span class="cov8" title="1"> {
+                templateToUse = templates.FiredTemplate
+        }</span>
+
+        // Render the template (which is plain text)
+        <span class="cov8" title="1">rawMessage, err := renderTemplate("telegram_message", templateToUse, data)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to render Telegram template for alert '%s': %w", data.AlertName, err)
+        }</span>
+
+        // Telegram API expects MarkdownV2 or HTML.
+        // The default templates are simple text. For MarkdownV2, special chars need escaping.
+        // For this version, we'll send as plain text (MarkdownV2 without special chars).
+        // A more advanced version could allow Markdown in templates and then escape it here, or use HTML.
+        // For now, we assume templates produce fairly plain text.
+        // Telegram's parse_mode MarkdownV2 requires escaping characters like '.', '!', '-', '(', ')', etc.
+        // For simplicity, let's use plain text and not set parse_mode or use "Markdown" which is more lenient but deprecated.
+        // The example templates have '🔥' and '✅', which are fine.
+        // Let's try with "MarkdownV2" and a simple escaper for critical characters.
+
+        <span class="cov8" title="1">escapedMessage := escapeTextForMarkdownV2(rawMessage)
+
+        apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", tn.config.BotToken)
+
+        payload := map[string]string{
+                "chat_id":    tn.config.ChatID,
+                "text":       escapedMessage,
+                "parse_mode": "MarkdownV2", // Specify parse mode
+        }
+
+        payloadBytes, err := json.Marshal(payload)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to marshal Telegram payload: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payloadBytes))
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create Telegram request: %w", err)
+        }</span>
+        <span class="cov8" title="1">req.Header.Set("Content-Type", "application/json")
+
+        resp, err := tn.client.Do(req)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to send message to Telegram API: %w", err)
+        }</span>
+        <span class="cov8" title="1">defer resp.Body.Close()
+
+        if resp.StatusCode != http.StatusOK </span><span class="cov8" title="1">{
+                var bodyBytes []byte
+                bodyBytes, _ =ReadAll(resp.Body) // ioutil.ReadAll is deprecated
+                return fmt.Errorf("telegram API request failed with status %d: %s", resp.StatusCode, string(bodyBytes))
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// escapeTextForMarkdownV2 escapes text for Telegram MarkdownV2.
+// Telegram requires escaping: _ * [ ] ( ) ~ ` &gt; # + - = | { } . !
+func escapeTextForMarkdownV2(text string) string <span class="cov8" title="1">{
+        escapeChars := []string{"_", "*", "[", "]", "(", ")", "~", "`", "&gt;", "#", "+", "-", "=", "|", "{", "}", ".", "!"}
+        var result strings.Builder
+        for _, r := range text </span><span class="cov8" title="1">{
+                char := string(r)
+                shouldEscape := false
+                for _, esc := range escapeChars </span><span class="cov8" title="1">{
+                        if char == esc </span><span class="cov8" title="1">{
+                                shouldEscape = true
+                                break</span>
+                        }
+                }
+                <span class="cov8" title="1">if shouldEscape </span><span class="cov8" title="1">{
+                        result.WriteString("\\")
+                }</span>
+                <span class="cov8" title="1">result.WriteString(char)</span>
+        }
+        <span class="cov8" title="1">return result.String()</span>
+}
+
+// Helper to read all from io.Reader (like ioutil.ReadAll)
+func ReadAll(r io.Reader) ([]byte, error) <span class="cov8" title="1">{
+    var b bytes.Buffer
+    _, err := b.ReadFrom(r)
+    return b.Bytes(), err
+}</span>
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package util
+
+import (
+        "fmt"
+        "regexp"
+        "strconv"
+        "strings"
+        "time"
+)
+
+var durationRegex = regexp.MustCompile(`^(\d+)([smh])$`)
+
+// ParseDurationString converts strings like "5m", "300s", "1h" into time.Duration.
+func ParseDurationString(durationStr string) (time.Duration, error) <span class="cov0" title="0">{
+        if durationStr == "" || durationStr == "0" || durationStr == "0s" || durationStr == "0m" || durationStr == "0h" </span><span class="cov0" title="0">{
+                return 0, nil
+        }</span>
+
+        <span class="cov0" title="0">matches := durationRegex.FindStringSubmatch(strings.ToLower(durationStr))
+        if len(matches) != 3 </span><span class="cov0" title="0">{
+                return 0, fmt.Errorf("invalid duration string format: %s. Use '10s', '5m', '1h'", durationStr)
+        }</span>
+
+        <span class="cov0" title="0">value, err := strconv.Atoi(matches[1])
+        if err != nil </span><span class="cov0" title="0">{
+                // Should not happen due to regex, but good practice
+                return 0, fmt.Errorf("invalid duration numeric value: %s", matches[1])
+        }</span>
+
+        <span class="cov0" title="0">unit := matches[2]
+        var durationUnit time.Duration
+        switch unit </span>{
+        case "s":<span class="cov0" title="0">
+                durationUnit = time.Second</span>
+        case "m":<span class="cov0" title="0">
+                durationUnit = time.Minute</span>
+        case "h":<span class="cov0" title="0">
+                durationUnit = time.Hour</span>
+        default:<span class="cov0" title="0">
+                // Should not happen due to regex
+                return 0, fmt.Errorf("invalid duration unit: %s", unit)</span>
+        }
+
+        <span class="cov0" title="0">return time.Duration(value) * durationUnit, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -1,0 +1,50 @@
+# Test configuration file for unit tests
+interval_seconds: 5
+hostname: "test-hostname"
+
+# Test alerts
+alerts:
+  - name: "Test CPU Alert"
+    metric: "cpu_percent_total"
+    condition: ">"
+    threshold: 80
+    duration: "2m"
+    aggregation: "average"
+    channels: ["test-email", "test-stdout"]
+
+  - name: "Test Memory Alert"
+    metric: "mem_percent_used"
+    condition: ">="
+    threshold: 90
+    duration: "1m"
+    aggregation: "max"
+    channels: ["test-stdout"]
+
+# Test notification channels
+notification_channels:
+  - name: "test-email"
+    type: "email"
+    config:
+      smtp_host: "smtp.test.com"
+      smtp_port: 587
+      smtp_username: "test@example.com"
+      smtp_from: "Test Monres <test@example.com>"
+      smtp_to: ["admin@example.com"]
+      smtp_use_tls: true
+
+  - name: "test-telegram"
+    type: "telegram"
+    config:
+      chat_id: "-123456789"
+
+  - name: "test-stdout"
+    type: "stdout"
+
+# Test templates
+templates:
+  alert_fired: |
+    TEST FIRED: {{ .AlertName }}@{{ .Hostname }}
+    {{ .MetricName }} = {{ .MetricValue }} {{ .Condition }} {{ .ThresholdValue }}
+  alert_resolved: |
+    TEST RESOLVED: {{ .AlertName }}@{{ .Hostname }}
+    {{ .MetricName }} is back to normal
