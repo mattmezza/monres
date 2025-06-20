@@ -59,19 +59,17 @@ templates:
 			// In a real integration test, we'd capture output and verify behavior
 			// For now, we'll test the configuration loading and channel validation logic
 			
-			if tc.name == "test_nonexistent_channel" {
-				// This should cause an error about the channel not being found
-				// Since testNotification calls log.Fatalf, we can't easily test it
-				// without refactoring to return errors instead of calling log.Fatalf
-				t.Skip("Skipping test that would call log.Fatalf")
-			}
+			// Call the testNotification function and capture the error
+			err := testNotification(tc.args)
 			
-			// Test that we can call testNotification function
-			// (This is more of a compilation test since testNotification calls log.Fatalf)
-			assert.NotPanics(t, func() {
-				// We can't easily test this without refactoring testNotification
-				// to return errors instead of calling log.Fatalf
-			})
+			if tc.expectError {
+				// Verify that the error matches the expected message
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.errorMsg)
+			} else {
+				// Ensure no error is returned for valid cases
+				require.NoError(t, err)
+			}
 		})
 	}
 }
