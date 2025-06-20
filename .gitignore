@@ -3,3 +3,4 @@ monres
 
 config.yaml
 .envrc
+coverage.*
