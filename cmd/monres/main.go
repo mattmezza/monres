@@ -37,18 +37,14 @@ func testNotification(configPath, channelName string) {
 	// Check if specific channel exists in config
 	if channelName != "" {
 		found := false
+		var availableChannels []string
 		for _, channel := range cfg.NotificationChannels {
+			availableChannels = append(availableChannels, channel.Name)
 			if channel.Name == channelName {
 				found = true
-				break
 			}
 		}
 		if !found {
-			// List available channels for user guidance
-			var availableChannels []string
-			for _, channel := range cfg.NotificationChannels {
-				availableChannels = append(availableChannels, channel.Name)
-			}
 			if len(availableChannels) > 0 {
 				log.Fatalf("ERROR: Channel '%s' not found in configuration. Available channels: %s", 
 					channelName, strings.Join(availableChannels, ", "))
