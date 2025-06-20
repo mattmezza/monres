@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,8 +25,116 @@ func init() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 }
 
+func testNotification(configPath, channelName string) {
+	log.Println("Testing notification channels...")
+	
+	// Load configuration
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to load configuration from %s: %v", configPath, err)
+	}
+	
+	// Check if specific channel exists in config
+	if channelName != "" {
+		found := false
+		for _, channel := range cfg.NotificationChannels {
+			if channel.Name == channelName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// List available channels for user guidance
+			var availableChannels []string
+			for _, channel := range cfg.NotificationChannels {
+				availableChannels = append(availableChannels, channel.Name)
+			}
+			if len(availableChannels) > 0 {
+				log.Fatalf("ERROR: Channel '%s' not found in configuration. Available channels: %s", 
+					channelName, strings.Join(availableChannels, ", "))
+			} else {
+				log.Fatalf("ERROR: Channel '%s' not found and no notification channels configured", channelName)
+			}
+		}
+	}
+	
+	// Initialize notifiers
+	configuredNotifiers, err := notifier.InitializeNotifiers(cfg.NotificationChannels)
+	if err != nil {
+		log.Fatalf("FATAL: Failed to initialize notifiers: %v", err)
+	}
+	
+	if len(configuredNotifiers) == 0 {
+		log.Fatalf("ERROR: No notification channels were successfully initialized")
+	}
+	
+	// Create test notification data
+	testData := notifier.NotificationData{
+		AlertName:      "Test Alert",
+		MetricName:     "test_metric",
+		MetricValue:    42.5,
+		ThresholdValue: 40.0,
+		Condition:      ">",
+		State:          "FIRED",
+		Hostname:       cfg.EffectiveHostname,
+		Time:           time.Now(),
+		DurationString: "1m",
+		Aggregation:    "average",
+	}
+	
+	templates := notifier.NotificationTemplates{
+		FiredTemplate:    cfg.Templates.AlertFired,
+		ResolvedTemplate: cfg.Templates.AlertResolved,
+	}
+	
+	// Test specific channel or all channels
+	if channelName != "" {
+		// Test specific channel
+		if notifierInstance, exists := configuredNotifiers[channelName]; exists {
+			log.Printf("Testing notification channel: %s", channelName)
+			err := notifierInstance.Send(testData, templates)
+			if err != nil {
+				log.Fatalf("ERROR: Failed to send test notification to channel '%s': %v", channelName, err)
+			}
+			log.Printf("✅ Test notification sent successfully to channel: %s", channelName)
+		} else {
+			log.Fatalf("ERROR: Channel '%s' was not successfully initialized", channelName)
+		}
+	} else {
+		// Test all channels
+		log.Printf("Testing all %d configured notification channels...", len(configuredNotifiers))
+		successCount := 0
+		for name, notifierInstance := range configuredNotifiers {
+			log.Printf("Testing channel: %s", name)
+			err := notifierInstance.Send(testData, templates)
+			if err != nil {
+				log.Printf("❌ Failed to send test notification to channel '%s': %v", name, err)
+			} else {
+				log.Printf("✅ Test notification sent successfully to channel: %s", name)
+				successCount++
+			}
+		}
+		log.Printf("Test completed: %d/%d channels successful", successCount, len(configuredNotifiers))
+		if successCount == 0 {
+			log.Fatalf("ERROR: All notification channels failed")
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
+	
+	// Check if test-notification subcommand is provided
+	args := flag.Args()
+	if len(args) > 0 && args[0] == "test-notification" {
+		var channelName string
+		if len(args) > 1 {
+			channelName = args[1]
+		}
+		testNotification(configFile, channelName)
+		return
+	}
+	
 	log.Println("Starting monres...")
 
 	cfg, err := config.LoadConfig(configFile)
