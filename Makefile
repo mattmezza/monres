@@ -1,9 +1,13 @@
-.PHONY: build clean install uninstall reinstall release help
+.PHONY: build clean install uninstall reinstall release test test-verbose test-coverage test-race help
 
 help:
 	@echo "Usage:"
 	@echo "  make build   - Build the monres executable"
 	@echo "  make clean   - Clean up build artifacts"
+	@echo "  make test    - Run all tests"
+	@echo "  make test-verbose - Run tests with verbose output"
+	@echo "  make test-coverage - Run tests with coverage report"
+	@echo "  make test-race - Run tests with race detection"
 	@echo "  make install - Install monres and its systemd service"
 	@echo "  make uninstall - Uninstall monres and remove user/group"
 	@echo "  make reinstall - Reinstall monres"
@@ -12,7 +16,7 @@ build:
 	go build -ldflags="-s -w" -o monres cmd/monres/main.go
 	@echo "Build complete. Executable: ./monres"
 clean:
-	rm -f monres
+	rm -f monres coverage.out coverage.html
 	@echo "Cleaned up build artifacts."
 create-user:
 	sudo useradd -r -s /sbin/nologin monres
@@ -43,6 +47,18 @@ uninstall: clean del-user
 	@echo "Monres uninstalled successfully."
 reinstall: uninstall install
 	@echo "Monres reinstalled successfully."
+test:
+	go test ./...
+	@echo "All tests passed."
+test-verbose:
+	go test -v ./...
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+test-race:
+	go test -race ./...
+	@echo "Race detection tests passed."
 release:
 	gh release create $(name) --title "$(name)" --generate-notes ./monres
 	@echo "Release created successfully."
