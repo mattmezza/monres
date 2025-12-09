@@ -401,6 +401,136 @@ func (t *MockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Replace the URL with our test server URL
 	req.URL.Scheme = "http"
 	req.URL.Host = strings.TrimPrefix(t.server.URL, "http://")
-	
+
 	return http.DefaultTransport.RoundTrip(req)
+}
+
+func TestFormatValue(t *testing.T) {
+	testCases := []struct {
+		name       string
+		metricName string
+		value      float64
+		expected   string
+	}{
+		// Byte rate metrics
+		{
+			name:       "bytes_per_second_small",
+			metricName: "disk_read_bytes_ps",
+			value:      500,
+			expected:   "500.0 B/s",
+		},
+		{
+			name:       "bytes_per_second_kilobytes",
+			metricName: "disk_write_bytes_ps",
+			value:      1536,
+			expected:   "1.5 KB/s",
+		},
+		{
+			name:       "bytes_per_second_megabytes",
+			metricName: "net_recv_bytes_ps",
+			value:      5242880,
+			expected:   "5.0 MB/s",
+		},
+		{
+			name:       "bytes_per_second_large",
+			metricName: "net_sent_bytes_ps",
+			value:      551052824.82,
+			expected:   "525.5 MB/s",
+		},
+		{
+			name:       "bytes_per_second_gigabytes",
+			metricName: "disk_read_bytes_ps",
+			value:      1073741824,
+			expected:   "1.0 GB/s",
+		},
+		// Percentage metrics
+		{
+			name:       "cpu_percent",
+			metricName: "cpu_percent_total",
+			value:      85.5,
+			expected:   "85.5%",
+		},
+		{
+			name:       "mem_percent_used",
+			metricName: "mem_percent_used",
+			value:      72.3,
+			expected:   "72.3%",
+		},
+		{
+			name:       "mem_percent_free",
+			metricName: "mem_percent_free",
+			value:      27.7,
+			expected:   "27.7%",
+		},
+		{
+			name:       "swap_percent",
+			metricName: "swap_percent_used",
+			value:      10.0,
+			expected:   "10.0%",
+		},
+		// Unknown metrics (default format)
+		{
+			name:       "unknown_metric",
+			metricName: "custom_metric",
+			value:      123.456,
+			expected:   "123.46",
+		},
+		{
+			name:       "unknown_metric_integer",
+			metricName: "some_count",
+			value:      42.0,
+			expected:   "42.00",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := FormatValue(tc.metricName, tc.value)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestFormatBytesPerSecond(t *testing.T) {
+	testCases := []struct {
+		name     string
+		bytes    float64
+		expected string
+	}{
+		{"zero", 0, "0.0 B/s"},
+		{"bytes", 512, "512.0 B/s"},
+		{"kilobytes_boundary", 1024, "1.0 KB/s"},
+		{"kilobytes", 2048, "2.0 KB/s"},
+		{"megabytes_boundary", 1048576, "1.0 MB/s"},
+		{"megabytes", 10485760, "10.0 MB/s"},
+		{"gigabytes_boundary", 1073741824, "1.0 GB/s"},
+		{"gigabytes", 5368709120, "5.0 GB/s"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := formatBytesPerSecond(tc.bytes)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestFormatPercent(t *testing.T) {
+	testCases := []struct {
+		name     string
+		value    float64
+		expected string
+	}{
+		{"zero", 0, "0.0%"},
+		{"decimal", 50.5, "50.5%"},
+		{"whole", 100, "100.0%"},
+		{"small", 0.1, "0.1%"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := formatPercent(tc.value)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

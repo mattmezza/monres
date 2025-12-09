@@ -3,9 +3,10 @@ package notifier
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"strings"
 	gotexttemplate "text/template"
 	"time"
-	"log"
 
 	"github.com/mattmezza/monres/internal/config"
 )
@@ -22,6 +23,10 @@ type NotificationData struct {
 	Time           time.Time
 	DurationString string // e.g. "5m"
 	Aggregation    string // e.g. "average"
+
+	// Pre-formatted fields for human-readable display
+	FormattedMetricValue    string // e.g. "525.5 MB/s" or "85.5%"
+	FormattedThresholdValue string // e.g. "500.0 MB/s" or "90.0%"
 }
 
 type NotificationTemplates struct {
@@ -89,4 +94,42 @@ func InitializeNotifiers(cfgNotifChannels []config.NotificationChannelConfig) (m
         log.Printf("Successfully initialized notifier for channel: %s (type: %s)", ncCfg.Name, ncCfg.Type)
     }
     return notifiers, nil
+}
+
+// FormatValue formats a numeric value based on the metric name.
+// Returns a human-readable string with appropriate units.
+func FormatValue(metricName string, value float64) string {
+	switch {
+	case strings.HasSuffix(metricName, "_bytes_ps"):
+		return formatBytesPerSecond(value)
+	case strings.Contains(metricName, "_percent_"):
+		return formatPercent(value)
+	default:
+		return fmt.Sprintf("%.2f", value)
+	}
+}
+
+// formatBytesPerSecond converts bytes/s to human-readable format (B/s, KB/s, MB/s, GB/s)
+func formatBytesPerSecond(bytes float64) string {
+	const (
+		KB = 1024.0
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.1f GB/s", bytes/GB)
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB/s", bytes/MB)
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB/s", bytes/KB)
+	default:
+		return fmt.Sprintf("%.1f B/s", bytes)
+	}
+}
+
+// formatPercent formats a percentage value with % suffix
+func formatPercent(value float64) string {
+	return fmt.Sprintf("%.1f%%", value)
 }

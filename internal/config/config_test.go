@@ -90,7 +90,7 @@ notification_channels: []
 				Alerts:               []AlertRuleConfig{},
 				NotificationChannels: []NotificationChannelConfig{},
 				Templates: TemplateConfig{
-					AlertFired:    `ALERT FIRED: {{.AlertName}} on {{.Hostname}}. Metric: {{.MetricName}} {{.Condition}} {{.ThresholdValue}} (Current: {{printf "%.2f" .MetricValue}}). Time: {{.Time.Format "2006-01-02 15:04:05"}}`,
+					AlertFired:    `ALERT FIRED: {{.AlertName}} on {{.Hostname}}. Metric: {{.MetricName}} {{.Condition}} {{.FormattedThresholdValue}} (Current: {{.FormattedMetricValue}}). Time: {{.Time.Format "2006-01-02 15:04:05"}}`,
 					AlertResolved: `ALERT RESOLVED: {{.AlertName}} on {{.Hostname}}. Time: {{.Time.Format "2006-01-02 15:04:05"}}`,
 				},
 			},
