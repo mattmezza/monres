@@ -159,6 +159,9 @@ func (a *Alerter) sendNotificationsForRule(event AlertEvent) {
 			Time:           event.Timestamp,
 			DurationString: event.Rule.DurationStr,
 			Aggregation:    event.Rule.Aggregation,
+			// Human-readable formatted values
+			FormattedMetricValue:    notifier.FormatValue(event.Rule.Metric, event.MetricValue),
+			FormattedThresholdValue: notifier.FormatValue(event.Rule.Metric, event.Rule.Threshold),
 		}
 
 		err := notifierInstance.Send(data, a.templates)

@@ -77,7 +77,7 @@ templates:
     🔥 {{ .State }} {{ .AlertName }}@{{ .Hostname }} 🔥
     {{ .Time.Format "2006-01-02 15:04:05 MST" }}
 
-    current {{ .MetricName }} {{ printf "%.2f" .MetricValue }} {{ .Condition }} {{ .ThresholdValue }}
+    current {{ .MetricName }} {{ .FormattedMetricValue }} {{ .Condition }} {{ .FormattedThresholdValue }}
     {{if .Aggregation}}{{.Aggregation}}{{end}}{{if .DurationString}}({{.DurationString}}){{end}}
 
   alert_resolved: |
