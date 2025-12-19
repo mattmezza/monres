@@ -2,6 +2,14 @@
 interval_seconds: 1
 hostname: "" # Optional: override OS hostname. If empty, OS hostname is used.
 
+# Network Monitoring Configuration (Optional)
+# By default, Docker-related interfaces are excluded to avoid double-counting traffic.
+# network:
+#   # Interfaces to exclude from monitoring (exact match)
+#   exclude_interfaces: ["lo", "docker0"]
+#   # Interface prefixes to exclude (e.g., veth* matches veth123abc)
+#   exclude_prefixes: ["veth", "br-", "docker"]
+
 # Alert Rules
 alerts:
   # CPU above 90% on avg for last minute

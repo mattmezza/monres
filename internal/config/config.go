@@ -11,13 +11,14 @@ import (
 )
 
 type Config struct {
-	IntervalSeconds    int                    `yaml:"interval_seconds"`
-	HostnameOverride   string                 `yaml:"hostname"` // Field for Hostname
-	Alerts             []AlertRuleConfig      `yaml:"alerts"`
+	IntervalSeconds      int                         `yaml:"interval_seconds"`
+	HostnameOverride     string                      `yaml:"hostname"` // Field for Hostname
+	Alerts               []AlertRuleConfig           `yaml:"alerts"`
 	NotificationChannels []NotificationChannelConfig `yaml:"notification_channels"`
-	Templates          TemplateConfig         `yaml:"templates"`
-	CollectionInterval time.Duration          `yaml:"-"` // Derived
-	EffectiveHostname  string                 `yaml:"-"` // Derived
+	Templates            TemplateConfig              `yaml:"templates"`
+	Network              NetworkConfig               `yaml:"network"`
+	CollectionInterval   time.Duration               `yaml:"-"` // Derived
+	EffectiveHostname    string                      `yaml:"-"` // Derived
 }
 
 type AlertRuleConfig struct {
@@ -57,6 +58,16 @@ type TemplateConfig struct {
 	AlertResolved string `yaml:"alert_resolved"`
 }
 
+// NetworkConfig holds configuration for network metric collection
+type NetworkConfig struct {
+	// ExcludeInterfaces is a list of interface names to exclude (exact match)
+	// Default: ["lo", "docker0"]
+	ExcludeInterfaces []string `yaml:"exclude_interfaces"`
+	// ExcludePrefixes is a list of interface name prefixes to exclude
+	// Default: ["veth", "br-", "docker"]
+	ExcludePrefixes []string `yaml:"exclude_prefixes"`
+}
+
 func LoadConfig(filePath string) (*Config, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -85,6 +96,13 @@ func LoadConfig(filePath string) (*Config, error) {
 		cfg.EffectiveHostname = hostname
 	}
 
+	// Set default network interface exclusions to avoid double-counting Docker traffic
+	if len(cfg.Network.ExcludeInterfaces) == 0 {
+		cfg.Network.ExcludeInterfaces = []string{"lo", "docker0"}
+	}
+	if len(cfg.Network.ExcludePrefixes) == 0 {
+		cfg.Network.ExcludePrefixes = []string{"veth", "br-", "docker"}
+	}
 
 	for i := range cfg.Alerts {
 		rule := &cfg.Alerts[i]

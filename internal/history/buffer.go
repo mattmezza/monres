@@ -74,7 +74,7 @@ func (hb *MetricHistoryBuffer) GetDataPointsForDuration(metricName string, durat
 		return nil
 }
 
-	startTime := now.Add(-(duration + 1 * time.Second)) // -1s to ensure we get points within the duration
+	startTime := now.Add(-duration) // Get points within [now-duration, now]
 	var result []DataPoint
 	for i := len(points) - 1; i >= 0; i-- { // Iterate backwards for efficiency
 		dp := points[i]

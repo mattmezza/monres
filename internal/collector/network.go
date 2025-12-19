@@ -3,6 +3,7 @@ package collector
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -14,14 +15,41 @@ type NetworkStats struct {
 	TotalSentBytes uint64
 }
 
-// isRelevantInterface checks if the interface from /proc/net/dev is one we want to monitor.
-// Typically, exclude 'lo' (loopback). For a VPS, 'eth0', 'ensX', etc., are common.
-func isRelevantInterface(ifaceName string) bool {
-	return ifaceName != "lo"
+// NetworkInterfaceFilter holds the configuration for filtering network interfaces.
+type NetworkInterfaceFilter struct {
+	ExcludeInterfaces []string
+	ExcludePrefixes   []string
+}
+
+// DefaultNetworkInterfaceFilter returns the default filter that excludes
+// loopback and Docker-related interfaces to avoid double-counting.
+func DefaultNetworkInterfaceFilter() NetworkInterfaceFilter {
+	return NetworkInterfaceFilter{
+		ExcludeInterfaces: []string{"lo", "docker0"},
+		ExcludePrefixes:   []string{"veth", "br-", "docker"},
+	}
+}
+
+// isRelevantInterface checks if the interface should be monitored based on the filter.
+func isRelevantInterface(ifaceName string, filter NetworkInterfaceFilter) bool {
+	// Check exact match exclusions
+	for _, excluded := range filter.ExcludeInterfaces {
+		if ifaceName == excluded {
+			return false
+		}
+	}
+	// Check prefix exclusions
+	for _, prefix := range filter.ExcludePrefixes {
+		if strings.HasPrefix(ifaceName, prefix) {
+			return false
+		}
+	}
+	return true
 }
 
 // GetNetworkStats reads /proc/net/dev and aggregates received/transmitted bytes.
-func GetNetworkStats() (*NetworkStats, error) {
+// It uses the provided filter to exclude certain interfaces.
+func GetNetworkStats(filter NetworkInterfaceFilter) (*NetworkStats, error) {
 	file, err := os.Open("/proc/net/dev")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open /proc/net/dev: %w", err)
@@ -49,7 +77,7 @@ func GetNetworkStats() (*NetworkStats, error) {
 		}
 
 		ifaceName := fields[0]
-		if !isRelevantInterface(ifaceName) {
+		if !isRelevantInterface(ifaceName, filter) {
 			continue
 		}
 
@@ -87,16 +115,22 @@ func CalculateNetworkIORates(prev, curr NetworkStats, elapsedSeconds float64) (r
 		return 0, 0
 	}
 
-	deltaRecvBytes := curr.TotalRecvBytes - prev.TotalRecvBytes
-	deltaSentBytes := curr.TotalSentBytes - prev.TotalSentBytes
+	var deltaRecvBytes, deltaSentBytes uint64
 
-    // Handle counter wrap-around (unsigned integers)
-    if curr.TotalRecvBytes < prev.TotalRecvBytes { // wrapped
-        deltaRecvBytes = curr.TotalRecvBytes // treat as if started from 0 for this period, or use math.MaxUint64 - prev + curr
-    }
-     if curr.TotalSentBytes < prev.TotalSentBytes { // wrapped
-        deltaSentBytes = curr.TotalSentBytes
-    }
+	// Handle counter wrap-around (unsigned 64-bit integers)
+	if curr.TotalRecvBytes >= prev.TotalRecvBytes {
+		deltaRecvBytes = curr.TotalRecvBytes - prev.TotalRecvBytes
+	} else {
+		// Counter wrapped around: delta = (MaxUint64 - prev) + curr + 1
+		deltaRecvBytes = (math.MaxUint64 - prev.TotalRecvBytes) + curr.TotalRecvBytes + 1
+	}
+
+	if curr.TotalSentBytes >= prev.TotalSentBytes {
+		deltaSentBytes = curr.TotalSentBytes - prev.TotalSentBytes
+	} else {
+		// Counter wrapped around: delta = (MaxUint64 - prev) + curr + 1
+		deltaSentBytes = (math.MaxUint64 - prev.TotalSentBytes) + curr.TotalSentBytes + 1
+	}
 
 
 	recvBps := float64(deltaRecvBytes) / elapsedSeconds

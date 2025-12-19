@@ -157,9 +157,14 @@ func main() {
 	metricHist := history.NewMetricHistoryBuffer(maxHistDuration, cfg.CollectionInterval)
 
 
-	// Initialize Metric Collectors
-	metricCollector := collector.NewGlobalCollector()
-	log.Println("Metric collectors initialized.")
+	// Initialize Metric Collectors with network interface filter from config
+	networkFilter := &collector.NetworkInterfaceFilter{
+		ExcludeInterfaces: cfg.Network.ExcludeInterfaces,
+		ExcludePrefixes:   cfg.Network.ExcludePrefixes,
+	}
+	metricCollector := collector.NewGlobalCollector(networkFilter)
+	log.Printf("Metric collectors initialized. Network filter: exclude interfaces %v, exclude prefixes %v",
+		cfg.Network.ExcludeInterfaces, cfg.Network.ExcludePrefixes)
 
 	// Initialize Notifiers
 	configuredNotifiers, err := notifier.InitializeNotifiers(cfg.NotificationChannels)

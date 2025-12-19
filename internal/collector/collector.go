@@ -20,19 +20,29 @@ type MetricCollector interface {
 type GlobalCollector struct {
 	collectors []MetricCollector
 	// For rate-based metrics like disk/network IO
-	lastDiskStats    *DiskStats      // Pointer to allow nil for first run
-	lastNetworkStats *NetworkStats   // Pointer to allow nil for first run
-	lastCollectTime  time.Time
-	mu               sync.Mutex // Protects last stats and time
+	lastDiskStats          *DiskStats             // Pointer to allow nil for first run
+	lastNetworkStats       *NetworkStats          // Pointer to allow nil for first run
+	lastCollectTime        time.Time
+	networkInterfaceFilter NetworkInterfaceFilter // Filter for network interfaces
+	mu                     sync.Mutex             // Protects last stats and time
 }
 
-func NewGlobalCollector() *GlobalCollector {
+// NewGlobalCollector creates a new GlobalCollector with the given network interface filter.
+// If filter is nil or empty, it uses the default filter that excludes Docker interfaces.
+func NewGlobalCollector(networkFilter *NetworkInterfaceFilter) *GlobalCollector {
 	gc := &GlobalCollector{}
 	// Initialize specific collectors
 	gc.collectors = append(gc.collectors, NewCPUCollector())
 	gc.collectors = append(gc.collectors, NewMemoryCollector())
 	// Disk and Network collectors are special as they calculate rates.
 	// They are implicitly handled by CollectAll method or integrated.
+
+	// Set network interface filter (use default if not provided)
+	if networkFilter != nil {
+		gc.networkInterfaceFilter = *networkFilter
+	} else {
+		gc.networkInterfaceFilter = DefaultNetworkInterfaceFilter()
+	}
 
 	// For simplicity in this structure, we'll have explicit methods for disk/net
 	// and store their previous states in GlobalCollector.
@@ -89,7 +99,7 @@ func (gc *GlobalCollector) CollectAll() (CollectedMetrics, error) {
 	}
 
 	// Network I/O
-	currentNetStats, err := GetNetworkStats()
+	currentNetStats, err := GetNetworkStats(gc.networkInterfaceFilter)
 	if err != nil {
 		log.Printf("Error collecting Network I/O stats: %v", err)
 	} else {

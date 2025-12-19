@@ -11,11 +11,28 @@ import (
 )
 
 func TestNewGlobalCollector(t *testing.T) {
-	collector := NewGlobalCollector()
-	
+	// Test with nil filter (should use defaults)
+	collector := NewGlobalCollector(nil)
+
 	assert.NotNil(t, collector)
 	assert.NotNil(t, collector.collectors)
 	assert.Len(t, collector.collectors, 2) // CPU and Memory collectors
+
+	// Should have default filter applied
+	assert.Equal(t, []string{"lo", "docker0"}, collector.networkInterfaceFilter.ExcludeInterfaces)
+	assert.Equal(t, []string{"veth", "br-", "docker"}, collector.networkInterfaceFilter.ExcludePrefixes)
+}
+
+func TestNewGlobalCollectorWithCustomFilter(t *testing.T) {
+	customFilter := &NetworkInterfaceFilter{
+		ExcludeInterfaces: []string{"lo", "eth1"},
+		ExcludePrefixes:   []string{"veth"},
+	}
+	collector := NewGlobalCollector(customFilter)
+
+	assert.NotNil(t, collector)
+	assert.Equal(t, []string{"lo", "eth1"}, collector.networkInterfaceFilter.ExcludeInterfaces)
+	assert.Equal(t, []string{"veth"}, collector.networkInterfaceFilter.ExcludePrefixes)
 }
 
 func TestCollectMemoryStatsWithMockData(t *testing.T) {
@@ -72,7 +89,7 @@ func TestCollectCPUStatsWithMockData(t *testing.T) {
 }
 
 func TestGlobalCollectorCollectAll(t *testing.T) {
-	collector := NewGlobalCollector()
+	collector := NewGlobalCollector(nil)
 	
 	// First collection
 	metrics1, err := collector.CollectAll()
@@ -160,8 +177,8 @@ func TestRealSystemMetrics(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping real system metrics test in short mode")
 	}
-	
-	collector := NewGlobalCollector()
+
+	collector := NewGlobalCollector(nil)
 	
 	// Collect metrics multiple times to test rate calculations
 	for i := 0; i < 3; i++ {
