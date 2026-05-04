@@ -130,9 +130,10 @@ func TestCalculateNetworkIORatesNegativeElapsed(t *testing.T) {
 	assert.Equal(t, 0.0, sentRate)
 }
 
-func TestCalculateNetworkIORatesWrapAround(t *testing.T) {
-	// Simulate a 64-bit counter wrap-around
-	// Previous value is near MaxUint64, current is small (wrapped)
+func TestCalculateNetworkIORatesReset(t *testing.T) {
+	// Simulate counter reset (e.g., interface restart, reboot, VM migration).
+	// Previous value is large, current is small (counter reset to 0 then grew a bit).
+	// We treat this as a fresh start: delta = current value.
 	prev := NetworkStats{
 		TotalRecvBytes: math.MaxUint64 - 1000,
 		TotalSentBytes: math.MaxUint64 - 500,
@@ -145,13 +146,11 @@ func TestCalculateNetworkIORatesWrapAround(t *testing.T) {
 
 	recvRate, sentRate := CalculateNetworkIORates(prev, curr, elapsed)
 
-	// Expected delta for recv: (MaxUint64 - (MaxUint64 - 1000)) + 2000 + 1 = 1000 + 2000 + 1 = 3001
-	expectedRecvDelta := float64(1000 + 2000 + 1)
-	assert.Equal(t, expectedRecvDelta, recvRate)
-
-	// Expected delta for sent: (MaxUint64 - (MaxUint64 - 500)) + 1500 + 1 = 500 + 1500 + 1 = 2001
-	expectedSentDelta := float64(500 + 1500 + 1)
-	assert.Equal(t, expectedSentDelta, sentRate)
+	// curr < prev → treat as reset, delta = curr
+	// recv: 2000 / 1.0 = 2000
+	assert.Equal(t, 2000.0, recvRate)
+	// sent: 1500 / 1.0 = 1500
+	assert.Equal(t, 1500.0, sentRate)
 }
 
 func TestCalculateNetworkIORatesNoChange(t *testing.T) {

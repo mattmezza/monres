@@ -109,15 +109,21 @@ func FormatValue(metricName string, value float64) string {
 	}
 }
 
-// formatBytesPerSecond converts bytes/s to human-readable format (B/s, KB/s, MB/s, GB/s)
+// formatBytesPerSecond converts bytes/s to human-readable format (B/s, KB/s, MB/s, GB/s, TB/s, PB/s)
 func formatBytesPerSecond(bytes float64) string {
 	const (
 		KB = 1024.0
 		MB = KB * 1024
 		GB = MB * 1024
+		TB = GB * 1024
+		PB = TB * 1024
 	)
 
 	switch {
+	case bytes >= PB:
+		return fmt.Sprintf("%.1f PB/s", bytes/PB)
+	case bytes >= TB:
+		return fmt.Sprintf("%.1f TB/s", bytes/TB)
 	case bytes >= GB:
 		return fmt.Sprintf("%.1f GB/s", bytes/GB)
 	case bytes >= MB:

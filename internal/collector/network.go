@@ -3,7 +3,6 @@ package collector
 import (
 	"bufio"
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -117,19 +116,20 @@ func CalculateNetworkIORates(prev, curr NetworkStats, elapsedSeconds float64) (r
 
 	var deltaRecvBytes, deltaSentBytes uint64
 
-	// Handle counter wrap-around (unsigned 64-bit integers)
+	// Handle counter wrap-around (unsigned 64-bit integers).
+	// For 64-bit network counters at realistic speeds, true wrap-around takes centuries.
+	// A decrease almost always means a counter reset (interface down/up, reboot, VM migration).
+	// Treat it as a fresh start: delta = current value.
 	if curr.TotalRecvBytes >= prev.TotalRecvBytes {
 		deltaRecvBytes = curr.TotalRecvBytes - prev.TotalRecvBytes
 	} else {
-		// Counter wrapped around: delta = (MaxUint64 - prev) + curr + 1
-		deltaRecvBytes = (math.MaxUint64 - prev.TotalRecvBytes) + curr.TotalRecvBytes + 1
+		deltaRecvBytes = curr.TotalRecvBytes
 	}
 
 	if curr.TotalSentBytes >= prev.TotalSentBytes {
 		deltaSentBytes = curr.TotalSentBytes - prev.TotalSentBytes
 	} else {
-		// Counter wrapped around: delta = (MaxUint64 - prev) + curr + 1
-		deltaSentBytes = (math.MaxUint64 - prev.TotalSentBytes) + curr.TotalSentBytes + 1
+		deltaSentBytes = curr.TotalSentBytes
 	}
 
 
